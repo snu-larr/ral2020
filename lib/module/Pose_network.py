@@ -811,7 +811,8 @@ class Pose_network(Network):
         frame1_warped = tensor_out['frame1_warped'][0,:]        
         mask0 =  tensor_out['mask0'][0,:,:,1:]
         mask1 = tensor_out['mask1'][0,:,:,1:]
-
+        pc_loss = tensor_out['pc_loss'][0,:]
+        
         f_diff = np.sum(np.abs(frame1_warped-frame0), axis = 2)
         f_diff_ref = np.sum(np.abs(frame1-frame0), axis = 2)
         
