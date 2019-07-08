@@ -213,11 +213,6 @@ class Pose_network(Network):
         self.img_size =  config['preprocess']['image_size']
         self.img_size = [int(i/self.scale) for i in self.img_size]
         
-        self.class_names = config['object']['object_class']
-        self.using_class =config['object']['using_class']
-        self.mask_ch = config['object']['nb_object']
-        assert set(self.using_class).issubset(self.class_names)
-
         self.weight_dir = './weight/'+self.network_name+'/'+self.task_name
         self.figure_dir = './figure/'+self.network_name+'/'+self.task_name
         self.output_dir = './output/'+self.network_name+'/'+self.task_name
