@@ -2,7 +2,8 @@
 This code is an example of fully unsupervised training of objects 6d-pose in a scene.
 
 ## requirements:
-python3 
+python3 >= 3.6.8 <br />
+<br />
 (python3 package) <br />
 matplotlib >= 3.0.3 <br />
 numpy >= 1.16.2 <br />
