@@ -20,11 +20,11 @@ Then, weight will be automatically saved
 
 ## Step2 : Extracting the pose from the trained network
 
-
 ```
 python3 ./main.py task1 pose -t
 ```
- 
+It saves pose trajectory in  './output/pose/[task_name]/se3_pose.npy' 
+
 ## Step3 : Visualized the trained result
 ```
 python3 ./main.py task1 read_pose
