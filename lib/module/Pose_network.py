@@ -466,8 +466,7 @@ class Pose_network(Network):
                 self._v = 1e1 
 
             loss_ =  self._p*photometric_loss_ + self._pc*pc_loss_ + self._recon*rgb_recover_loss_\
-                        + self._d*depth_recover_loss_ + self._vc*vicon_supervision_loss_ \
-                        +self._v*volume_loss_
+                        + self._d*depth_recover_loss_ +self._v*volume_loss_
             train_op = tf.train.AdamOptimizer(learning_rate = learning_rate, beta1 = 0.9, beta2 = 0.99).minimize(loss_)
 
 
