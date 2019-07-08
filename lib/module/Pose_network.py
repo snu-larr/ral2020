@@ -605,6 +605,7 @@ class Pose_network(Network):
         writer.write(log_string)
         for demo_name, se3 in se3_dict.items():
             se3_dict[demo_name] = np.concatenate(se3, axis = 0)
+        np.save(self.output_dir+'/se3_pose.npy', se3_dict)
 
     def train(self, continuous = False):
         sess = self.sess
