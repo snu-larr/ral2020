@@ -4,13 +4,13 @@ submission for corl2019
 
 ## Step1 : Training pose network
 
-'''
+```
 python3 ./main.py task1 pose 
-'''
+```
 or training continouously with existing weight
-'''
+```
 Python3 ./main.py task1 pose -c
-'''
+```
 
 To stop the training, you need to press ctrl+c
 Then, weight will be automatically saved

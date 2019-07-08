@@ -540,7 +540,7 @@ class Pose_network(Network):
             util.create_dir(self.output_dir+'/'+demo_name+'/depth')
             util.create_dir(self.output_dir+'/'+demo_name+'/warped_img')
         
-        self.error = 0
+        self._error = 0
         global_step = 0
         one_cycle_loss = 0
         one_cycle_photo = 0
@@ -745,7 +745,8 @@ class Pose_network(Network):
             except:
                 traceback.print_exc()
                 print('current task:'+self.task_name)
-                IPython.embed()
+                print('saving weight...')
+                #IPython.embed()
                 time.sleep(3)
                 saver.save(sess, self.weight_dir+'/u_net.ckpt')
                 break
@@ -891,5 +892,5 @@ class Pose_network(Network):
         plt.axis('off')
 
         plt.savefig(file_path)
-        self.error += np.mean(f_diff_masked+b_diff_masked)
+        self._error += np.mean(f_diff_masked+b_diff_masked)
         plt.close()
