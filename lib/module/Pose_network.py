@@ -153,7 +153,6 @@ class Pose_stream(Batch_stream):
             bbox0_list = bbox_list[0:-2]
             bbox1_list = bbox_list[1:-1]
             data_len = len(img0_list)
-            IPython.embed()
                 
             idx = np.arange(data_len)
             if self.mode == 'train':
