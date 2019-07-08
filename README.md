@@ -1,10 +1,10 @@
 # Code attachment for Corl2019
 This code is an example of fully unsupervised training of objects 6d-pose in a scene.
 
-## requirements:
+## Requirements:
 python3 >= 3.6.8 <br />
 <br />
-(python3 package) <br />
+(below are python3 packages) <br />
 matplotlib >= 3.0.3 <br />
 numpy >= 1.16.2 <br />
 scipy >- 1.3.0 <br />
