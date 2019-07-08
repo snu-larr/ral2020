@@ -31,5 +31,5 @@ To visualize the trained output, you need to exectue the visualizing code.
 ```
 python3 ./main.py task1 read_pose
 ```
-It will plot pose trajectory in './output/pose/read_pose/[task_name]'.
+It will plot pose trajectory in './output/pose/read_pose/[task_name]'. \\
 It will plot pose projection on an image plane in './output/pose/read_pose2/[task_name]'.
