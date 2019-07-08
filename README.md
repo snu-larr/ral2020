@@ -29,4 +29,5 @@ It saves pose trajectory in  './output/pose/[task_name]/se3_pose.npy'
 ```
 python3 ./main.py task1 read_pose
 ```
-
+It plots pose trajectory in './output/pose/read_pose/[task_name]'.
+It plots pose projection on an image plane in './output/pose/read_pose2/[task_name]'.
