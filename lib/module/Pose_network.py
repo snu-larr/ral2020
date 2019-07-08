@@ -153,7 +153,8 @@ class Pose_stream(Batch_stream):
             bbox0_list = bbox_list[0:-2]
             bbox1_list = bbox_list[1:-1]
             data_len = len(img0_list)
-
+            IPython.embed()
+                
             idx = np.arange(data_len)
             if self.mode == 'train':
                 random.shuffle(idx)
@@ -183,7 +184,6 @@ class Pose_stream(Batch_stream):
                 bbox0 = np.load(bbox0_path)
                 bbox1 = np.load(bbox1_path)
                 self._count +=1
-                IPython.embed()
                 yield img0, img1, depth0, depth1, \
                         mask0, mask1, nan_mask0, nan_mask1, \
                         bbox0, bbox1 , demo
