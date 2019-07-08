@@ -714,7 +714,6 @@ class Pose_network(Network):
                     one_cycle_loss = 0
                     one_cycle_photo = 0
                     one_cycle_pc = 0
-                    one_cycle_mask = 0
                     one_cycle_depth = 0
                     one_cycle_rgb = 0
                     one_cycle_volume = 0
@@ -739,7 +738,6 @@ class Pose_network(Network):
                 one_cycle_loss += tensor_out['loss']
                 one_cycle_photo += self._p*tensor_out['photometric_loss']
                 one_cycle_pc += self._pc*tensor_out['pc_loss']
-                one_cycle_mask += self._m*tensor_out['mask_loss']
                 one_cycle_depth += self._d*tensor_out['depth_recover_loss']
                 one_cycle_rgb += self._recon*tensor_out['rgb_recover_loss']
                 one_cycle_volume += self._v*tensor_out['volume_loss']
