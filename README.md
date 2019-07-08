@@ -16,8 +16,8 @@ If you have pre-trained weight in './weight/pose/[task_name]/', you can use the 
 Python3 ./main.py task1 pose -c
 ```
 
-The log file wile be saved in './log/[task_name]/pose_train.txt' \\
-The training figure will be saved in './figure/pose/[task_name]' \\
+The log file wile be saved in './log/[task_name]/pose_train.txt' ;
+The training figure will be saved in './figure/pose/[task_name]' ;
 To stop the training, you need to press ctrl+c. Then, weight will be automatically saved
 
 
@@ -33,5 +33,5 @@ To visualize the trained output, you need to exectue the visualizing code.
 ```
 python3 ./main.py task1 read_pose
 ```
-It will plot pose trajectory in './output/pose/read_pose/[task_name]'. \\
+It will plot pose trajectory in './output/pose/read_pose/[task_name]'. ;
 It will plot pose projection on an image plane in './output/pose/read_pose2/[task_name]'.
