@@ -1,7 +1,6 @@
 import cv2
 import IPython
 import numpy as np
-import scipy
 
 DEPTH_MIN = 50
 DEPTH_MAX = 20000

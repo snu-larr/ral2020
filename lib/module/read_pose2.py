@@ -6,7 +6,6 @@ import numpy as np
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from scipy.optimize import minimize
 import IPython
 
 from lib.math import *
