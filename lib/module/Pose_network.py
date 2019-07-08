@@ -363,8 +363,8 @@ class Pose_network(Network):
                 unet0_logit_, unet0_sigmoid_, embed0_ = network.u_net(depth0_rgb_concat_, output_ch = 4, trainable = False)
                 unet1_logit_, unet1_sigmoid_, embed1_ = network.u_net(depth1_rgb_concat_, output_ch = 4, reuse = True, trainable = False)
             
-            rgb0_sigmoid_ = tf.expand_dims(unet0_sigmoid_[:,:,:,1:4],3)
-            rgb1_sigmoid_ = tf.expand_dims(unet1_sigmoid_[:,:,:,1:4],3)
+            rgb0_sigmoid_ = unet0_sigmoid_[:,:,:,1:4]
+            rgb1_sigmoid_ = unet1_sigmoid_[:,:,:,1:4]
             depth0_sigmoid_ = tf.expand_dims(unet0_sigmoid_[:,:,:,0],3)
             depth1_sigmoid_ = tf.expand_dims(unet1_sigmoid_[:,:,:,0],3)
             recovered_depth0_ = self.unnormalize_depth(depth0_sigmoid_)[:,:,:,0] 
