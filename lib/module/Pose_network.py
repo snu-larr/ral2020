@@ -150,8 +150,6 @@ class Pose_stream(Batch_stream):
             nan_mask1_list = nan_mask_list[1:-1]
             mask0_list = mask_list[0:-2]
             mask1_list = mask_list[1:-1]
-            vicon0_list = vicon_list[0:-2]
-            vicon1_list = vicon_list[1:-1]
             bbox0_list = bbox_list[0:-2]
             bbox1_list = bbox_list[1:-1]
             data_len = len(img0_list)
@@ -547,7 +545,6 @@ class Pose_network(Network):
         one_cycle_loss = 0
         one_cycle_photo = 0
         one_cycle_pc = 0
-        one_cycle_vicon = 0
         one_cycle_depth = 0
         one_cycle_rgb = 0
         one_cycle_volume = 0
@@ -581,7 +578,6 @@ class Pose_network(Network):
             one_cycle_loss += tensor_out['loss']
             one_cycle_photo += tensor_out['photometric_loss']
             one_cycle_pc += tensor_out['pc_loss']
-            one_cycle_vicon += tensor_out['vicon_supervision_loss']
             one_cycle_depth += tensor_out['depth_recover_loss']
             one_cycle_rgb += tensor_out['rgb_recover_loss']
             one_cycle_volume += tensor_out['volume_loss']
@@ -601,10 +597,10 @@ class Pose_network(Network):
             se3_dict[demo_name].append(se3_1)
 
         one_cycle_train = pose_stream._count
-        log_string = '%d \t l: %.10f \t p: %.10f \t pc: %.10f \t vc: %.10f \t d: %.10f rgb: %.10f volume: %.10f \n'\
+        log_string = '%d \t l: %.10f \t p: %.10f \t pc: %.10f \t d: %.10f rgb: %.10f volume: %.10f \n'\
                             %(global_step, 
                                 one_cycle_loss/one_cycle_train, one_cycle_photo/one_cycle_train,
-                                one_cycle_pc/one_cycle_train, one_cycle_vicon/one_cycle_train,
+                                one_cycle_pc/one_cycle_train,
                                 one_cycle_depth/one_cycle_train, one_cycle_rgb/one_cycle_train, one_cycle_volume/one_cycle_train)
         writer.write(log_string)
         for demo_name, se3 in se3_dict.items():
@@ -638,7 +634,6 @@ class Pose_network(Network):
         one_cycle_loss = 0
         one_cycle_photo = 0
         one_cycle_pc = 0
-        one_cycle_vicon = 0
         one_cycle_depth = 0
         one_cycle_rgb = 0
         one_cycle_volume = 0
@@ -692,10 +687,10 @@ class Pose_network(Network):
                     ##
                     one_cycle_train = pose_stream._count
                     duration = time.time()-one_cycle_time
-                    log_string = '%d \t %.2f \t l: %.10f \t p: %.10f \t pc: %.10f \t vc: %.10f \t d: %.10f rgb: %.10f window: %.10f \n'\
+                    log_string = '%d \t %.2f \t l: %.10f \t p: %.10f \t pc: %.10f \t d: %.10f rgb: %.10f window: %.10f \n'\
                             %(global_step, duration, 
                                 one_cycle_loss/one_cycle_train, one_cycle_photo/one_cycle_train,
-                                one_cycle_pc/one_cycle_train, one_cycle_vicon/one_cycle_train,
+                                one_cycle_pc/one_cycle_train,
                                 one_cycle_depth/one_cycle_train,
                                 one_cycle_rgb/one_cycle_train, one_cycle_volume/one_cycle_train)
                     #log_string = str(global_step)+ '\t' + str(one_cycle_loss/one_cycle_train) + '\n'
@@ -719,7 +714,6 @@ class Pose_network(Network):
                     one_cycle_photo = 0
                     one_cycle_pc = 0
                     one_cycle_mask = 0
-                    one_cycle_vicon = 0
                     one_cycle_depth = 0
                     one_cycle_rgb = 0
                     one_cycle_volume = 0
@@ -745,7 +739,6 @@ class Pose_network(Network):
                 one_cycle_photo += self._p*tensor_out['photometric_loss']
                 one_cycle_pc += self._pc*tensor_out['pc_loss']
                 one_cycle_mask += self._m*tensor_out['mask_loss']
-                one_cycle_vicon += self._vc*tensor_out['vicon_supervision_loss']
                 one_cycle_depth += self._d*tensor_out['depth_recover_loss']
                 one_cycle_rgb += self._recon*tensor_out['rgb_recover_loss']
                 one_cycle_volume += self._v*tensor_out['volume_loss']
