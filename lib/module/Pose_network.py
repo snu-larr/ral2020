@@ -30,7 +30,7 @@ from lib.preprocess import *
 from lib.learner import *
 
 class Pose_stream(Batch_stream):
-    def __init__(self, task_name, batch_size, mode = 'train', supervision = 'never'):
+    def __init__(self, task_name, batch_size, scale = 1, mode = 'train', supervision = 'never'):
         self.batch_size = batch_size
         self.mode = mode
         self.supervision = supervision  # 'never', 'full', both_ends', ...
@@ -86,10 +86,10 @@ class Pose_stream(Batch_stream):
                 depth_load = np.load(depth_path)
                 mask_load = np.load(mask_path)
                 
-                img = preprocess_img(img_load, scale=0.5)
-                depth, nan_mask= preprocess_depth(depth_load[:,:,2], scale=0.5)
-                mask = preprocess_mask(mask_load, scale=0.5)
-                bbox = preprocess_bbox(depth_load, mask_load, scale = 0.5)
+                img = preprocess_img(img_load, scale=scale)
+                depth, nan_mask= preprocess_depth(depth_load[:,:,2], scale=scale)
+                mask = preprocess_mask(mask_load, scale=scale)
+                bbox = preprocess_bbox(depth_load, mask_load, scale = scale)
                 
                 if self.supervision == 'full':
                     usingVicon = [1]
@@ -527,9 +527,10 @@ class Pose_network(Network):
         tensors = self.tensors
         task_name = self.task_name
         batch_size = self.batch_size
+        scale = self.scale
 
         saver.restore(sess, self.weight_dir+'/u_net.ckpt')
-        pose_stream = Pose_stream(task_name, batch_size, mode = 'test', supervision = self.supervision)
+        pose_stream = Pose_stream(task_name, batch_size, scale, mode = 'test', supervision = self.supervision)
         demo_list = pose_stream.demo_list
         batch_iter = pose_stream.iterator(batch_size = batch_size)
         writer = Writer(task_name, self.network_name+'_test')
@@ -613,8 +614,9 @@ class Pose_network(Network):
         operators = self.operators
         task_name = self.task_name
         batch_size = self.batch_size
+        scale = self.scale
 
-        pose_stream = Pose_stream(task_name, batch_size, supervision = self.supervision)
+        pose_stream = Pose_stream(task_name, batch_size, scale, supervision = self.supervision)
         batch_iter = pose_stream.iterator(batch_size = batch_size)
         
         util.create_dir(self.weight_dir)

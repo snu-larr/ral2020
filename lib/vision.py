@@ -48,14 +48,14 @@ class Zed_intrinsic(Intrinsic):
 
 class Zed_mini_intrinsic(Intrinsic):
     def __init__(self, scale = 1.):
-        self.w = int(672/scale)
-        self.h = int(376/scale)
+        self.w = int(672*scale)
+        self.h = int(376*scale)
         self.f = 335.9676513671875 #332.6258
-        self.fx = self.f/self.w/scale
-        self.fy = self.f/self.h/scale
+        self.fx = (self.f/self.w)*scale
+        self.fy = (self.f/self.h)*scale
         
-        self.cx = 322.11163330078125/self.w/scale
-        self.cy = 200.56185913085938/self.h/scale
+        self.cx = (322.11163330078125/self.w)*scale
+        self.cy = (200.56185913085938/self.h)*scale
         
 
 ## vision algorithm
