@@ -45,7 +45,7 @@ if __name__ == '__main__':
         else:
             seg_net.train(continuous = CONTINUOUS)
 
-    elif module_name == 'pose'
+    elif module_name == 'pose':
         from lib.module.Pose_network import Pose_network
         pose_net = Pose_network(config, mode = 'default')
         if TEST:
