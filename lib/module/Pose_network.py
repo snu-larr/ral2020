@@ -92,12 +92,11 @@ class Pose_stream(Batch_stream):
                 bbox = preprocess_bbox(depth_load, mask_load, scale = 0.5)
                 
                 if self.supervision == 'full':
-                    vicon = vicon_load[index,:,:]
                     usingVicon = [1]
                 elif self.supervision == 'never':
                     usingVicon = [0]
                 elif self.supervision == 'both_ends': 
-                    if (index == 0): or (index == total_len-1):
+                    if (index == 0) or (index == total_len-1):
                         usingVicon = [1]
                     else:
                         usingVicon = [0]
