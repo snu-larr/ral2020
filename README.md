@@ -16,6 +16,8 @@ If you have pre-trained weight in './weight/pose/[task_name]/', you can use the 
 Python3 ./main.py task1 pose -c
 ```
 
+The log file wile be saved in './log/[task_name]/pose_train.txt' \\
+The training figure will be saved in './figure/pose/[task_name]' \\
 To stop the training, you need to press ctrl+c. Then, weight will be automatically saved
 
 
