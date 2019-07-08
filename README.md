@@ -2,10 +2,10 @@
 This code is an example of fully unsupervised training of objects 6d-pose in a scene.
 
 ## requirements:
-matplotlib >= 3.0.3
-numpy >= 1.16.2
-tensorflow-gpu == 1.13.1
-tflearn >= 0.3.2
+matplotlib >= 3.0.3 <br />
+numpy >= 1.16.2 <br />
+tensorflow-gpu == 1.13.1 <br />
+tflearn >= 0.3.2 <br />
 
 ## Step1 : Training pose network
 The requirements for training the pose network are following:
