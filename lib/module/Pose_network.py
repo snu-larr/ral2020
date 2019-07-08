@@ -212,7 +212,8 @@ class Pose_network(Network):
         ###
         self.img_size =  config['preprocess']['image_size']
         self.img_size = [int(i/self.scale) for i in self.img_size]
-        
+        self.mask_ch = config['object']['nb_object']
+
         self.weight_dir = './weight/'+self.network_name+'/'+self.task_name
         self.figure_dir = './figure/'+self.network_name+'/'+self.task_name
         self.output_dir = './output/'+self.network_name+'/'+self.task_name
