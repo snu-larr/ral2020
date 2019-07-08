@@ -12,7 +12,6 @@ from lib.math import *
 from lib import vision
 from lib import util
 
-
 def projection(T, intrinsic):
     w = intrinsic.w
     h = intrinsic.h
@@ -34,6 +33,7 @@ def read(config):
     data_name = config['data_name']
     nb_object = config['object']['nb_object']
     supervision = config['pose']['supervision']
+    scale = config['pose']['scale']
     fps = config['animation']['fps']
     pose_path = './output/pose/'+data_name
     
@@ -42,7 +42,7 @@ def read(config):
     se3_dict = np.load(pose_path+'/se3_pose.npy').item()
     
     obj = vision.SE3object(np.zeros(6), angle_type = 'axis')
-    intrinsic = vision.Zed_mini_intrinsic(scale = 2)
+    intrinsic = vision.Zed_mini_intrinsic(scale = scale)
     
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -74,7 +74,7 @@ def read(config):
         for t in range(len(se3_traj)):
             ax.clear()
             img = np.load(img_list[t])
-            img = cv2.resize(img, None, fx = 0.5, fy = 0.5)
+            img = cv2.resize(img, None, fx = scale, fy = scale)
             ax.imshow(img/255.)  
             for obj_idx in range(nb_object):
                 if supervision == 'never':
