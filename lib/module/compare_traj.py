@@ -301,8 +301,8 @@ def compare(config):
                 total_rotation.append(np.expand_dims(vicon_se3_t[3:6],0))
 
                 ax.clear()
-                obj_vicon.apply_pose(vicon_se3[t,:])
-                obj_vision.apply_pose(SE3_to_se3(vision_T))
+                obj_vicon.apply_pose(vision_se3_t)
+                obj_vision.apply_pose(SE3_to_se3(vision_T_t))
                 obj_vicon.plot(ax, scale = 0.015, linewidth = 3)
                 obj_vision.plot(ax, scale = 0.015, linewidth = 3)
                 ##
@@ -322,7 +322,7 @@ def compare(config):
             
             total_position = np.concatenate(total_position,0)
             total_rotation = np.concatenate(total_rotation,0)
-            IPython.embed()
+            
             np.savetxt(output_dir+'/'+demo+'/loss.txt',[loss])
             np.savetxt(output_dir+'/'+demo+'/position_error.txt',[position_error])
             np.savetxt(output_dir+'/'+demo+'/rotation_error.txt',[rotation_error])
