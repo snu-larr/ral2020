@@ -37,6 +37,8 @@ class Pose_stream(Batch_stream):
         self.img_dir = './data'+'/'+task_name
         self.mask_dir = './output/segment/' + task_name
         self.preprocess_dir = './preprocess/'+task_name
+        self.vicon_dir = './output/vicon/'+task_name
+
         self.num_data = 0
         self._count = 0
 
@@ -44,24 +46,34 @@ class Pose_stream(Batch_stream):
         self.img_dict = {}
         self.depth_dict = {}
         self.mask_dict = {}
-        
+        self.vicon_dict = {}
+        self.g_vr_dict = {}
+
         self.img_preprocess_dict = {}
         self.depth_preprocess_dict = {}
         self.nan_mask_preprocess_dict = {}
         self.mask_preprocess_dict = {}
         self.bbox_preprocess_dict = {}
+        self.vicon_preprocess_dict = {}
+        self.usingVicon_preprocess_dict = {}
+        self.g_vr_preprocess_dict = {}
 
         for demo in self.demo_list:
             img_demo_dir = self.img_dir+'/'+demo
             mask_demo_dir = self.mask_dir +'/'+demo
+            vicon_demo_dir = self.vicon_dir+'/'+demo
             self.img_dict[demo] = sorted(glob.glob(img_demo_dir+'/image/*.npy'))
             self.depth_dict[demo] = sorted(glob.glob(img_demo_dir+'/depth/*.npy'))
             self.mask_dict[demo] = sorted(glob.glob(mask_demo_dir+'/*.npy'))
+            self.vicon_dict[demo] = vicon_demo_dir+'/aligned.npy'
+            self.g_vr_dict[demo] = img_demo_dir+'/camera_position0.npy' # vicon to robot coordinates
 
         for demo in self.demo_list:
             img_list = self.img_dict[demo]
             depth_list = self.depth_dict[demo]
             mask_list = self.mask_dict[demo]
+            vicon_list = self.vicon_dict[demo]
+            g_vr_list = self.g_vr_dict[demo]
 
             preprocess_dir = self.preprocess_dir+'/'+demo
             preprocess_img_dir = preprocess_dir +'/image'
@@ -70,6 +82,8 @@ class Pose_stream(Batch_stream):
             preprocess_mask_dir = preprocess_dir +'/mask'
             preprocess_mask_img_dir = preprocess_dir +'/mask_img'
             preprocess_bbox_dir = preprocess_dir +'/bbox'
+            preprocess_usingVicon_dir = preprocess_dir +'/usingVicon'
+            preprocess_g_vr_dir = preprocess_dir + '/g_vr'
 
             util.create_dir(preprocess_img_dir, clear = True)
             util.create_dir(preprocess_depth_dir, clear = True)
@@ -77,7 +91,10 @@ class Pose_stream(Batch_stream):
             util.create_dir(preprocess_mask_dir, clear = True) 
             util.create_dir(preprocess_mask_img_dir, clear = True) 
             util.create_dir(preprocess_bbox_dir, clear = True) 
-            
+            util.create_dir(preprocess_vicon_dir, clear = True)
+            util.create_dir(preprocess_usingVicon_dir, clear = True)
+            util.create_dir(preprocess_g_vr_dir, clear = True)
+
             index = 0
             total_len = len(img_list)
             for img_path, depth_path, mask_path in zip(img_list, depth_list, mask_list):
@@ -89,21 +106,28 @@ class Pose_stream(Batch_stream):
                 depth, nan_mask= preprocess_depth(depth_load[:,:,2], scale=scale)
                 mask = preprocess_mask(mask_load, scale=scale)
                 bbox = preprocess_bbox(depth_load, mask_load, scale = scale)
-                
+                g_vr = np.copy(g_vr_SE3)
+
                 if self.supervision == 'full':
                     usingVicon = [1]
+                    vicon = vicon_load[index,:,:]
                 elif self.supervision == 'never':
                     usingVicon = [0]
+                    vicon = vicon_load[0,:,:]
                 elif self.supervision == 'both_ends': 
                     if (index == 0) or (index == total_len-1):
                         usingVicon = [1]
+                        vicon = vicon_load[index,:,:]
                     else:
                         usingVicon = [0]
+                        vicon = vicon_load[index,:,:]
                 elif self.supervision == 'one_end':
                     if index == 0:
                         usingVicon = [1]
+                        vicon = vicon_load[index,:,:]
                     else:
                         usingVicon = [0]
+                        vicon = vicon_load[index,:,:]
                 else:
                     raise NotImplementedError
                 
@@ -112,12 +136,18 @@ class Pose_stream(Batch_stream):
                 mask = np.expand_dims(mask, axis = 0)
                 nan_mask = np.expand_dims(nan_mask, axis = 0)
                 bbox = np.expand_dims(bbox, axis = 0)
+                vicon = np.expand_dims(vicon, 0)
+                usingVicon = np.expand_dims(usingVicon, 0)
+                g_vr = np.expand_dims(g_vr,0)
 
                 np.save(preprocess_img_dir+'/%04d.npy'%index, img)
                 np.save(preprocess_depth_dir+'/%04d.npy'%index, depth)
                 np.save(preprocess_nan_mask_dir+'/%04d.npy'%index, nan_mask)
                 np.save(preprocess_mask_dir+'/%04d.npy'%index, mask)
                 np.save(preprocess_bbox_dir+'/%04d.npy'%index, bbox)
+                np.save(preprocess_vicon_dir+'/%04d.npy'%index, vicon)
+                np.save(preprocess_usingVicon_dir+'/%04d.npy'%index, usingVicon)
+                np.save(preprocess_g_vr_dir+'/%04d.npy'%index, g_vr)
 
                 mask_img = multichannel_to_image(mask[0,:])
                 np.save(preprocess_mask_img_dir+'/%04d.png'%index, mask_img)
@@ -129,6 +159,9 @@ class Pose_stream(Batch_stream):
             self.nan_mask_preprocess_dict[demo] = sorted(glob.glob(preprocess_nan_mask_dir+'/*.npy'))
             self.mask_preprocess_dict[demo] = sorted(glob.glob(preprocess_mask_dir+'/*.npy'))
             self.bbox_preprocess_dict[demo] = sorted(glob.glob(preprocess_bbox_dir+'/*.npy'))
+            self.vicon_preprocess_dict[demo] = sorted(glob.glob(preprocess_vicon_dir+'/*.npy'))
+            self.usingVicon_preprocess_dict[demo] = sorted(glob.glob(preprocess_usingVicon_dir+'/*.npy'))
+            self.g_vr_preprocess_dict[demo] = sorted(glob.glob(preprocess_g_vr_dir+'/*.npy'))
             self.num_data += len(self.img_dict[demo])
         
     def iterator(self, batch_size):
@@ -140,6 +173,9 @@ class Pose_stream(Batch_stream):
             nan_mask_list = self.nan_mask_preprocess_dict[demo]
             mask_list = self.mask_preprocess_dict[demo]
             bbox_list = self.bbox_preprocess_dict[demo]
+            vicon_list = self.vicon_preprocess_dict[demo]
+            usingVicon_list = self.usingVicon_preprocess_dict[demo]
+            g_vr_list = self.g_vr_preprocess_dict[demo]
 
             img0_list = img_list[0:-2]
             img1_list = img_list[1:-1]
@@ -151,6 +187,15 @@ class Pose_stream(Batch_stream):
             mask1_list = mask_list[1:-1]
             bbox0_list = bbox_list[0:-2]
             bbox1_list = bbox_list[1:-1]
+            vicon0_list = vicon_list[0:-2]
+            vicon1_list = vicon_list[1:-1]
+            vicon2_list = vicon_list[2:]
+            usingVicon0_list = usingVicon_list[0:-2]
+            usingVicon1_list = usingVicon_list[1:-1]
+            usingVicon2_list = usingVicon_list[2:]
+            g_vr0_list = g_vr_list[0:-2]
+            g_vr1_list = g_vr_list[1:-1] 
+            g_vr2_list = g_vr_list[2:]
             data_len = len(img0_list)
                 
             idx = np.arange(data_len)
@@ -170,6 +215,15 @@ class Pose_stream(Batch_stream):
                 mask1_path = mask1_list[i]
                 bbox0_path = bbox0_list[i]
                 bbox1_path = bbox1_list[i]
+                vicon0_path = vicon0_list[i]
+                vicon1_path = vicon1_list[i]
+                vicon2_path = vicon2_list[i]
+                usingVicon0_path = usingVicon0_list[i]
+                usingVicon1_path = usingVicon1_list[i]
+                usingVicon2_path = usingVicon2_list[i]
+                g_vr0_path = g_vr0_list[i]
+                g_vr1_path = g_vr1_list[i]
+                g_vr2_path = g_vr2_list[i]
 
                 img0 = np.load(img0_path)
                 img1 = np.load(img1_path)
@@ -181,9 +235,16 @@ class Pose_stream(Batch_stream):
                 mask1 = np.load(mask1_path)
                 bbox0 = np.load(bbox0_path)
                 bbox1 = np.load(bbox1_path)
+                vicon0 = np.load(vicon0_path)
+                vicon1 = np.load(vicon1_path)
+                usingVicon0 = np.load(usingVicon0_path)
+                usingVicon1 = np.load(usingVicon1_path)
+                g_vr0 = np.load(g_vr0_path)
+                g_vr1 = np.load(g_vr1_path)
                 self._count +=1
                 yield img0, img1, depth0, depth1, \
                         mask0, mask1, nan_mask0, nan_mask1, \
+                        vicon0, vicon1, usingVicon0, usingVicon1, g_vr0, g_vr1, \
                         bbox0, bbox1 , demo
             
 class se3_pose_network(Network):
@@ -339,6 +400,12 @@ class se3_pose_network(Network):
             nan1_ph = tf.placeholder(dtype = tf.float32, shape = (None, img_size[0], img_size[1]))
             bbox0_ph = tf.placeholder(dtype = tf.float32, shape = (None,mask_ch, 6))
             bbox1_ph = tf.placeholder(dtype = tf.float32, shape = (None,mask_ch, 6))
+            vicon0_ph = tf.placeholder(dtype = tf.float32, shape = (None, mask_ch, 6))
+            vicon1_ph = tf.placeholder(dtype = tf.float32, shape = (None, mask_ch, 6))
+            usingVicon0_ph = tf.placeholder(dtype = tf.float32, shape = (None, 1))
+            usingVicon1_ph = tf.placeholder(dtype = tf.float32, shape = (None, 1))
+            g_vr0_ph = tf.placeholder(dtype = tf.float32, shape = (None, 4, 4))
+            g_vr1_ph = tf.placeholder(dtype = tf.float32, shape = (None, 4, 4))
 
             # used vision module
             cloud_transformer = vision.Cloud_transformer(intrinsic = 'zed_mini', scale = scale)    
@@ -380,6 +447,40 @@ class se3_pose_network(Network):
             se3_0_ = network.pose_net(embed0_, mask_ch, reuse = False) # [N,K,6]
             se3_1_ = network.pose_net(embed1_, mask_ch, reuse = True) # [N,K,6]
 
+            usingVicon0_ = tf.expand_dims(usingVicon0_ph, 1)
+            usingVicon1_ = tf.expand_dims(usingVicon1_ph, 1)
+            se3_0_hard_ = tf.multiply(usingVicon0_, vicon0_ph)+tf.multiply(1-usingVicon0_, se3_0_)
+            se3_1_hard_ = tf.multiply(usingVicon1_, vicon1_ph)+tf.multiply(1-usingVicon1_, se3_1_)
+        
+            if self.supervision == 'never':                
+                # actual notation : 
+                # g_vr * g_rc = g_vc
+                # g_vc * g_co1 = g_vo1
+                # g_c2c1 = g_vc^-1 * g_vo2 * g_vo1^-1 * g_cv^-1
+                se3_rc_ = tf.Variable( np.asarray([[0.38457832, 0.09596953, -0.32798763, -0.34428167, 0.43178049, -0.17598158]],dtype = np.float32), trainable = True) # camera to vicon
+                se3_rc_ = tf.tile(se3_rc_, [batch_size, 1])
+                g_rc_ = tf_se3_to_SE3(se3_rc_)
+                g_vc1_ = tf.matmul(g_vr0_ph, g_rc_)
+                g_vc2_ = tf.matmul(g_vr1_ph, g_rc_)  
+                g_vc1_ = tf.reshape(g_vc1_, [-1,1,4,4]) # assert object num = 1
+                g_vc2_ = tf.reshape(g_vc2_, [-1,1,4,4])        
+                
+            elif (self.supervision == 'both_ends') or (self.supervision == 'full'):                
+                # actual notation : 
+                # g_vr * g_rc = g_vc
+                # g_vc * g_co1 = g_vo1
+                # g_c2c1 = g_vc^-1 * g_vo2 * g_vo1^-1 * g_vc
+                se3_rc_ = tf.Variable( np.asarray([[0.38457832, 0.09596953, -0.32798763, -0.34428167, 0.43178049, -0.17598158]],dtype = np.float32), trainable = True) # camera to vicon
+                se3_rc_ = tf.tile(se3_rc_, [batch_size, 1])
+
+                g_rc_ = tf_se3_to_SE3(se3_rc_)
+                g_vc1_ = tf.matmul(g_vr0_ph, g_rc_)
+                g_vc2_ = tf.matmul(g_vr1_ph, g_rc_)  
+                g_vc1_ = tf.reshape(g_vc1_, [-1,1,4,4]) # assert object num = 1
+                g_vc2_ = tf.reshape(g_vc2_, [-1,1,4,4])       
+                g_vc2_inv_ = tf.reshape(tf_inv_SE3(tf.reshape(g_vc2_,[-1,4,4])),[-1,mask_ch,4,4])
+                G_SE3_ = tf.matmul(tf.matmul(g_vc2_inv_,G_SE3_),g_vc1_)
+
             G_SE3_ = self.get_G(se3_0_ , se3_1_)
             G_SE3_inv_ = tf.reshape(tf_inv_SE3(tf.reshape(G_SE3_,[-1,4,4])),[-1, mask_ch,4,4])
             
@@ -413,6 +514,14 @@ class se3_pose_network(Network):
             frame0_warped_ = image_warper_backward(frame0_ph, b_pix_pos_)
             pc0_warped_ = image_warper_backward(pc0_, b_pix_pos_)
 
+            vicon_supervision_loss0_ = tf.reduce_sum(tf.square( tf_se3_to_SE3(vicon0_ph[:,0,:])-tf_se3_to_SE3(se3_0_[:,0,:])),[1,2])
+            vicon_supervision_loss0_ = tf.multiply(usingVicon0_ph,vicon_supervision_loss0_)
+            vicon_supervision_loss0_ = tf.reduce_mean(vicon_supervision_loss0_)
+
+            vicon_supervision_loss1_ = tf.reduce_sum(tf.square( tf_se3_to_SE3(vicon1_ph[:,0,:])-tf_se3_to_SE3(se3_1_[:,0,:])),[1,2])
+            vicon_supervision_loss1_ = tf.multiply(usingVicon1_ph, vicon_supervision_loss1_)
+            vicon_supervision_loss1_ = tf.reduce_mean(vicon_supervision_loss1_)
+
             ## losses
             # (1) photometric loss
             f_photometric_loss_ = self.get_photometric_loss(frame0_ph, frame1_warped_, mask0_[:,:,:,1:], nan0_ph)
@@ -436,9 +545,10 @@ class se3_pose_network(Network):
             rgb_recover_loss_ = rgb_recover_loss0_+rgb_recover_loss1_
             depth_recover_loss_ = depth_recover_loss0_ + depth_recover_loss1_   
             volume_loss_ = volume_loss0_ + volume_loss1_
+            vicon_supervision_loss_ = vicon_supervision_loss0_ + vicon_supervision_loss1_
 
             if self.supervision =='full':
-                self._p = 0
+                self._p = 0 
                 self._pc = 0 
                 self._d = 1e-2  
                 self._recon = 1e-1
@@ -446,7 +556,7 @@ class se3_pose_network(Network):
                 self._v = 0
             
             elif self.supervision == 'both_ends':
-                self._p = 0
+                self._p = 1  
                 self._pc = 1e-1 
                 self._d = 1e-2  
                 self._recon = 1e-2 
@@ -454,7 +564,7 @@ class se3_pose_network(Network):
                 self._v = 1e1 
 
             elif self.supervision == 'never':
-                self._p = 0  
+                self._p = 1   
                 self._pc = 1e-1  
                 self._d = 1e-2   
                 self._recon = 1e-2 
@@ -462,9 +572,8 @@ class se3_pose_network(Network):
                 self._v = 1e1 
 
             loss_ =  self._p*photometric_loss_ + self._pc*pc_loss_ + self._recon*rgb_recover_loss_\
-                        + self._d*depth_recover_loss_ +self._v*volume_loss_
+                        + self._d*depth_recover_loss_ +self._v*volume_loss_  + self._vc*vicon_supervision_loss_
             train_op = tf.train.AdamOptimizer(learning_rate = learning_rate, beta1 = 0.9, beta2 = 0.99).minimize(loss_)
-
 
         self.placeholders = {}
         self.placeholders['frame0_ph'] = frame0_ph
@@ -477,6 +586,12 @@ class se3_pose_network(Network):
         self.placeholders['nan1_ph'] = nan1_ph
         self.placeholders['bbox0_ph'] = bbox0_ph
         self.placeholders['bbox1_ph'] = bbox1_ph
+        self.placeholders['vicon0_ph'] = vicon0_ph
+        self.placeholders['vicon1_ph'] = vicon1_ph
+        self.placeholders['usingVicon0_ph'] = usingVicon0_ph
+        self.placeholders['usingVicon1_ph'] = usingVicon1_ph
+        self.placeholders['g_vr0_ph'] = g_vr0_ph
+        self.placeholders['g_vr1_ph'] = g_vr1_ph
 
         self.tensors = {}
         self.tensors.update(self.placeholders)
@@ -508,6 +623,7 @@ class se3_pose_network(Network):
         self.tensors['pc_loss'] = pc_loss_
         self.tensors['rgb_recover_loss'] = rgb_recover_loss_
         self.tensors['volume_loss'] = volume_loss_
+        self.tensors['vicon_supervision_loss'] = vicon_supervision_loss_
         self.tensors['loss'] = loss_
         
         self.operators = {}
@@ -546,6 +662,7 @@ class se3_pose_network(Network):
         one_cycle_pc = 0
         one_cycle_depth = 0
         one_cycle_rgb = 0
+        one_cycle_vicon = 0
         one_cycle_volume = 0
 
         se3_dict = {}
@@ -555,6 +672,9 @@ class se3_pose_network(Network):
                     depth0_batch, depth1_batch, \
                     mask0_batch, mask1_batch, \
                     nan0_batch, nan1_batch, \
+                    vicon0_batch, vicon1_batch, \
+                    usingVicon0_batch, usingVicon1_batch, \
+                    g_vr0_batch, g_vr1_batch, \
                     bbox0_batch, bbox1_batch, \
                     demo_name = next(batch_iter)
                 count = pose_stream._count
@@ -571,6 +691,12 @@ class se3_pose_network(Network):
                     placeholders['nan1_ph'] : nan1_batch,
                     placeholders['bbox0_ph'] : bbox0_batch,
                     placeholders['bbox1_ph'] : bbox1_batch
+                    placeholders['vicon0_ph'] : vicon0_batch,
+                    placeholders['vicon1_ph'] : vicon1_batch,
+                    placeholders['usingVicon0_ph'] : usingVicon0_batch,
+                    placeholders['usingVicon1_ph'] : usingVicon1_batch,
+                    placeholders['g_vr0_ph'] : g_vr0_batch,
+                    placeholders['g_vr1_ph'] : g_vr1_batch
             }
 
             tensor_out = sess.run(tensors, feed_dict = feed_dict)
@@ -580,6 +706,7 @@ class se3_pose_network(Network):
             one_cycle_depth += tensor_out['depth_recover_loss']
             one_cycle_rgb += tensor_out['rgb_recover_loss']
             one_cycle_volume += tensor_out['volume_loss']
+            one_cycle_vicon += tensor_out['vicon_supervision_loss']
             if saveFigure:
                 self.subplot_depth(tensor_out, self.output_dir+'/'+demo_name+'/depth/%06d.png'%(count-1))
                 self.subplot_warpedImg(tensor_out, self.output_dir+'/'+demo_name+'/warped_img/%06d.png'%(count-1))
@@ -596,10 +723,10 @@ class se3_pose_network(Network):
             se3_dict[demo_name].append(se3_1)
 
         one_cycle_train = pose_stream._count
-        log_string = '%d \t l: %.10f \t p: %.10f \t pc: %.10f \t d: %.10f rgb: %.10f volume: %.10f \n'\
+        log_string = '%d \t l: %.10f \t p: %.10f \t pc: %.10f \t vc: %.10f \t d: %.10f rgb: %.10f volume: %.10f \n'\
                             %(global_step, 
                                 one_cycle_loss/one_cycle_train, one_cycle_photo/one_cycle_train,
-                                one_cycle_pc/one_cycle_train,
+                                one_cycle_pc/one_cycle_train, one_cycle_vicon/one_cycle_train,
                                 one_cycle_depth/one_cycle_train, one_cycle_rgb/one_cycle_train, one_cycle_volume/one_cycle_train)
         writer.write(log_string)
         for demo_name, se3 in se3_dict.items():
@@ -637,6 +764,7 @@ class se3_pose_network(Network):
         one_cycle_pc = 0
         one_cycle_depth = 0
         one_cycle_rgb = 0
+        one_cycle_vicon = 0
         one_cycle_volume = 0
 
         one_cycle_time = time.time()
@@ -656,12 +784,21 @@ class se3_pose_network(Network):
                 demo_batch = []
                 bbox0_batch = []
                 bbox1_batch = []
+                vicon0_batch = []
+                vicon1_batch = []
+                usingVicon0_batch = []
+                usingVicon1_batch = []
+                g_vr0_batch = []
+                g_vr1_batch = []
                 try:
                     for i in range(self.batch_size):
                         frame0_sample, frame1_sample, \
                             depth0_sample, depth1_sample, \
                             mask0_sample, mask1_sample, \
                             nan0_sample, nan1_sample, \
+                            vicon0_sample, vicon1_sample, \
+                            usingVicon0_sample, usingVicon1_sample, \
+                            g_vr0_sample, g_vr1_sample, \
                             bbox0_sample, bbox1_sample, demo_name = next(batch_iter)
                         frame0_batch.append(frame0_sample)
                         frame1_batch.append(frame1_sample)
@@ -671,6 +808,12 @@ class se3_pose_network(Network):
                         mask1_batch.append(mask1_sample)
                         nan0_batch.append(nan0_sample)
                         nan1_batch.append(nan1_sample)
+                        vicon0_batch.append(vicon0_sample)
+                        vicon1_batch.append(vicon1_sample)
+                        usingVicon0_batch.append(usingVicon0_sample)
+                        usingVicon1_batch.append(usingVicon1_sample)
+                        g_vr0_batch.append(g_vr0_sample)
+                        g_vr1_batch.append(g_vr1_sample)
                         bbox0_batch.append(bbox0_sample)
                         bbox1_batch.append(bbox1_sample)
                     frame0_batch = np.concatenate(frame0_batch, axis = 0)
@@ -681,6 +824,12 @@ class se3_pose_network(Network):
                     mask1_batch = np.concatenate(mask1_batch, axis = 0)
                     nan0_batch = np.concatenate(nan0_batch, axis = 0)
                     nan1_batch = np.concatenate(nan1_batch, axis = 0)
+                    vicon0_batch = np.concatenate(vicon0_batch, axis = 0)
+                    vicon1_batch = np.concatenate(vicon1_batch, axis = 0)
+                    usingVicon0_batch = np.concatenate(usingVicon0_batch, axis = 0)
+                    usingVicon1_batch = np.concatenate(usingVicon1_batch, axis = 0)
+                    g_vr0_batch = np.concatenate(g_vr0_batch, axis = 0 )
+                    g_vr1_batch = np.concatenate(g_vr1_batch, axis = 0 )
                     bbox0_batch = np.concatenate(bbox0_batch, axis = 0)
                     bbox1_batch = np.concatenate(bbox1_batch, axis = 0)
                     
@@ -688,10 +837,10 @@ class se3_pose_network(Network):
                     ##
                     one_cycle_train = pose_stream._count
                     duration = time.time()-one_cycle_time
-                    log_string = '%d \t %.2f \t l: %.10f \t p: %.10f \t pc: %.10f \t d: %.10f rgb: %.10f window: %.10f \n'\
+                    log_string = '%d \t %.2f \t l: %.10f \t p: %.10f \t pc: %.10f \t vc: %.10f \t d: %.10f rgb: %.10f window: %.10f \n'\
                             %(global_step, duration, 
                                 one_cycle_loss/one_cycle_train, one_cycle_photo/one_cycle_train,
-                                one_cycle_pc/one_cycle_train,
+                                one_cycle_pc/one_cycle_train, one_cycle_vicon/one_cycle_train,
                                 one_cycle_depth/one_cycle_train,
                                 one_cycle_rgb/one_cycle_train, one_cycle_volume/one_cycle_train)
                     #log_string = str(global_step)+ '\t' + str(one_cycle_loss/one_cycle_train) + '\n'
@@ -716,6 +865,7 @@ class se3_pose_network(Network):
                     one_cycle_pc = 0
                     one_cycle_depth = 0
                     one_cycle_rgb = 0
+                    one_cycle_vicon = 0
                     one_cycle_volume = 0
                     one_cycle_time = time.time()
                     global_step +=1
@@ -730,6 +880,12 @@ class se3_pose_network(Network):
                     placeholders['mask1_ph'] : mask1_batch,
                     placeholders['nan0_ph'] : nan0_batch,
                     placeholders['nan1_ph'] : nan1_batch,
+                    placeholders['vicon0_ph'] : vicon0_batch,
+                    placeholders['vicon1_ph'] : vicon1_batch,
+                    placeholders['usingVicon0_ph'] : usingVicon0_batch,
+                    placeholders['usingVicon1_ph'] : usingVicon1_batch,
+                    placeholders['g_vr0_ph'] : g_vr0_batch,
+                    placeholders['g_vr1_ph'] : g_vr1_batch,
                     placeholders['bbox0_ph'] : bbox0_batch,
                     placeholders['bbox1_ph'] : bbox1_batch
                 }
@@ -741,6 +897,7 @@ class se3_pose_network(Network):
                 one_cycle_depth += self._d*tensor_out['depth_recover_loss']
                 one_cycle_rgb += self._recon*tensor_out['rgb_recover_loss']
                 one_cycle_volume += self._v*tensor_out['volume_loss']
+                one_cycle_vicon += self._vc*tensor_out['vicon_supervision_loss']
                 
             except:
                 traceback.print_exc()
