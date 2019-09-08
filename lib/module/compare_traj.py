@@ -319,7 +319,7 @@ def compare(config):
             
             total_position = np.concatenate(total_position,0)
             total_rotation = np.concatenate(total_rotation,0)
-            
+            IPython.embed()
             np.savetxt(output_dir+'/'+demo+'/loss.txt',[loss])
             np.savetxt(output_dir+'/'+demo+'/position_error.txt',[position_error])
             np.savetxt(output_dir+'/'+demo+'/rotation_error.txt',[rotation_error])
