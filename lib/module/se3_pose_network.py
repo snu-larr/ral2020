@@ -82,8 +82,10 @@ class Pose_stream(Batch_stream):
             preprocess_mask_dir = preprocess_dir +'/mask'
             preprocess_mask_img_dir = preprocess_dir +'/mask_img'
             preprocess_bbox_dir = preprocess_dir +'/bbox'
+            preprocess_vicon_dir = preprocess_dir+'/vicon'
             preprocess_usingVicon_dir = preprocess_dir +'/usingVicon'
             preprocess_g_vr_dir = preprocess_dir + '/g_vr'
+
 
             util.create_dir(preprocess_img_dir, clear = True)
             util.create_dir(preprocess_depth_dir, clear = True)
@@ -556,7 +558,7 @@ class se3_pose_network(Network):
                 self._v = 0
             
             elif self.supervision == 'both_ends':
-                self._p = 1  
+                self._p = 0  
                 self._pc = 1e-1 
                 self._d = 1e-2  
                 self._recon = 1e-2 
@@ -564,7 +566,7 @@ class se3_pose_network(Network):
                 self._v = 1e1 
 
             elif self.supervision == 'never':
-                self._p = 1   
+                self._p = 0   
                 self._pc = 1e-1  
                 self._d = 1e-2   
                 self._recon = 1e-2 
@@ -690,7 +692,7 @@ class se3_pose_network(Network):
                     placeholders['nan0_ph'] : nan0_batch,
                     placeholders['nan1_ph'] : nan1_batch,
                     placeholders['bbox0_ph'] : bbox0_batch,
-                    placeholders['bbox1_ph'] : bbox1_batch,
+                    placeholders['bbox1_ph'] : bbox1_batch
                     placeholders['vicon0_ph'] : vicon0_batch,
                     placeholders['vicon1_ph'] : vicon1_batch,
                     placeholders['usingVicon0_ph'] : usingVicon0_batch,

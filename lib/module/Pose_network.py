@@ -82,8 +82,10 @@ class Pose_stream(Batch_stream):
             preprocess_mask_dir = preprocess_dir +'/mask'
             preprocess_mask_img_dir = preprocess_dir +'/mask_img'
             preprocess_bbox_dir = preprocess_dir +'/bbox'
+            preprocess_vicon_dir = preprocess_dir+'/vicon'
             preprocess_usingVicon_dir = preprocess_dir +'/usingVicon'
             preprocess_g_vr_dir = preprocess_dir + '/g_vr'
+
 
             util.create_dir(preprocess_img_dir, clear = True)
             util.create_dir(preprocess_depth_dir, clear = True)
