@@ -57,7 +57,7 @@ if __name__ == '__main__':
             pose_net.train(continuous=CONTINUOUS)
     
     elif module_name == 'sfm_pose':
-        pass`
+        pass
     
     elif module_name == 'se3_pose':
         pass
