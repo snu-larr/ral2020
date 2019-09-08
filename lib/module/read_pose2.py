@@ -39,7 +39,7 @@ def read(config):
     
     data_dir = './data/'+data_name
     output_dir = './output/read_pose2/'+data_name
-    se3_dict = np.load(pose_path+'/se3_pose.npy').item()
+    se3_dict = np.load(pose_path+'/se3_pose.npy', allow_pickle = True).item()
     
     obj = vision.SE3object(np.zeros(6), angle_type = 'axis')
     intrinsic = vision.Zed_mini_intrinsic(scale = scale)

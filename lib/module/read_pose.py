@@ -19,7 +19,7 @@ def read(config):
     demo_list = os.listdir('./data/'+data_name)
     output_dir = './output/read_pose/'+data_name
     
-    se3_dict = np.load(se3_path).item()
+    se3_dict = np.load(se3_path, allow_pickle = True).item()
     obj = vision.SE3object(np.zeros(6), angle_type = 'axis')
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
