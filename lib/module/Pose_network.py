@@ -692,7 +692,7 @@ class Pose_network(Network):
                     placeholders['nan0_ph'] : nan0_batch,
                     placeholders['nan1_ph'] : nan1_batch,
                     placeholders['bbox0_ph'] : bbox0_batch,
-                    placeholders['bbox1_ph'] : bbox1_batch
+                    placeholders['bbox1_ph'] : bbox1_batch,
                     placeholders['vicon0_ph'] : vicon0_batch,
                     placeholders['vicon1_ph'] : vicon1_batch,
                     placeholders['usingVicon0_ph'] : usingVicon0_batch,
