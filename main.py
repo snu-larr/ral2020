@@ -55,6 +55,12 @@ if __name__ == '__main__':
         else:
             pose_net.build()
             pose_net.train(continuous=CONTINUOUS)
+    
+    elif module_name == 'sfm_pose':
+        pass`
+    
+    elif module_name == 'se3_pose':
+        pass
 
     elif module_name == 'read_pose':
         from lib.module.read_pose import read
