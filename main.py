@@ -56,11 +56,27 @@ if __name__ == '__main__':
             pose_net.build()
             pose_net.train(continuous=CONTINUOUS)
     
-    elif module_name == 'sfm_pose':
-        pass
+    elif module_name == 'sfm_pose': # baseline1
+        from lib.module.Sfm_pose_network import Sfm_pose_network
+        pose_net = Sfm_pose_network(config, mode = 'default')
+        if TEST:
+            pose_net.batch_size = 1
+            pose_net.build()
+            pose_net.test()
+        else:
+            pose_net.build()
+            pose_net.train(continuous=CONTINUOUS)
     
-    elif module_name == 'se3_pose':
-        pass
+    elif module_name == 'se3_pose': # baseline2
+        from lib.module.se3_pose_network import se3_pose_network
+        pose_net = se3_pose_network(config, mode = 'default')
+        if TEST:
+            pose_net.batch_size = 1
+            pose_net.build()
+            pose_net.test()
+        else:
+            pose_net.build()
+            pose_net.train(continuous=CONTINUOUS)
 
     elif module_name == 'read_pose':
         from lib.module.read_pose import read
