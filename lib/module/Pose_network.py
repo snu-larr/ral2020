@@ -97,6 +97,12 @@ class Pose_stream(Batch_stream):
             util.create_dir(preprocess_usingVicon_dir, clear = True)
             util.create_dir(preprocess_g_vr_dir, clear = True)
 
+            vicon_load = np.load(vicon_list)
+            g_vr_load = np.load(g_vr_list)
+            g_vr_quater = g_vr_load[1]+g_vr_load[2] # append list
+            g_vr_se3 = quaternion_to_se3(g_vr_quater) 
+            g_vr_SE3 = se3_to_SE3(g_vr_se3)  # rescale
+            
             index = 0
             total_len = len(img_list)
             for img_path, depth_path, mask_path in zip(img_list, depth_list, mask_list):
