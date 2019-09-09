@@ -288,7 +288,7 @@ def compare(config):
                     
                     vision_T_t = np.matmul(SE3, vision_T_t)
                     vision_T_t[0:3,0:3] = np.matmul(SO3_align, vision_T_t[0:3,0:3])
-                    vision_T_t = SE3_to_se3(vision_T_t)
+                    vision_se3_t = SE3_to_se3(vision_T_t)
                     #IPython.embed()
                 
                 transformed_vision_se3 = np.concatenate([transformed_vision_se3, np.expand_dims(SE3_to_se3(vision_T_t),0)], 0)
