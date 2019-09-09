@@ -467,7 +467,7 @@ class Pose_network(Network):
                 # g_vr * g_rc = g_vc
                 # g_vc * g_co1 = g_vo1
                 # g_c2c1 = g_vc^-1 * g_vo2 * g_vo1^-1 * g_cv^-1
-                se3_rc_ = tf.Variable( np.asarray([[0.38457832, 0.09596953, -0.32798763, -0.34428167, 0.43178049, -0.17598158]],dtype = np.float32), trainable = True) # camera to vicon
+                se3_rc_ = tf.Variable( np.asarray([[0.38457832, 0.09596953, -0.32798763, -0.34428167, 0.43178049, -0.17598158]],dtype = np.float32), trainable = False) # camera to vicon
                 se3_rc_ = tf.tile(se3_rc_, [batch_size, 1])
                 g_rc_ = tf_se3_to_SE3(se3_rc_)
                 g_vc1_ = tf.matmul(g_vr0_ph, g_rc_)
@@ -480,7 +480,7 @@ class Pose_network(Network):
                 # g_vr * g_rc = g_vc
                 # g_vc * g_co1 = g_vo1
                 # g_c2c1 = g_vc^-1 * g_vo2 * g_vo1^-1 * g_vc
-                se3_rc_ = tf.Variable( np.asarray([[0.38457832, 0.09596953, -0.32798763, -0.34428167, 0.43178049, -0.17598158]],dtype = np.float32), trainable = True) # camera to vicon
+                se3_rc_ = tf.Variable( np.asarray([[0.38457832, 0.09596953, -0.32798763, -0.34428167, 0.43178049, -0.17598158]],dtype = np.float32), trainable = False) # camera to vicon
                 se3_rc_ = tf.tile(se3_rc_, [batch_size, 1])
 
                 g_rc_ = tf_se3_to_SE3(se3_rc_)
