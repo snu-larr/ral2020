@@ -286,7 +286,7 @@ def compare(config):
                     #_, g_vr = util.load_vicon(data_demo_dir+'/camera_position0.npy')
                     #SE3 = np.matmul(g_vr, g_rc)
                     
-                    #vision_T_t = np.matmul(SE3, vision_T_t)
+                    vision_T_t = np.matmul(SE3, vision_T_t)
                     vision_T_t[0:3,0:3] = np.matmul(SO3_align, vision_T_t[0:3,0:3])
                     vision_se3_t = SE3_to_se3(vision_T_t)
                     #IPython.embed()
