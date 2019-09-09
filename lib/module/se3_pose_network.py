@@ -557,7 +557,7 @@ class se3_pose_network(Network):
             vicon_supervision_loss_ = vicon_supervision_loss0_ + vicon_supervision_loss1_
 
             if self.supervision =='full':
-                self._p = 0 
+                self._p = 1e-20 
                 self._pc = 0 
                 self._d = 1e-2  
                 self._recon = 1e-1
@@ -565,7 +565,7 @@ class se3_pose_network(Network):
                 self._v = 0
             
             elif self.supervision == 'both_ends':
-                self._p = 0  
+                self._p = 1e-20
                 self._pc = 1e-1 
                 self._d = 1e-2  
                 self._recon = 1e-2 
@@ -573,7 +573,7 @@ class se3_pose_network(Network):
                 self._v = 1e1 
 
             elif self.supervision == 'never':
-                self._p = 0   
+                self._p = 1e-20
                 self._pc = 1e-1  
                 self._d = 1e-2   
                 self._recon = 1e-2 
