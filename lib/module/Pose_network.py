@@ -492,7 +492,7 @@ class Pose_network(Network):
                 G_SE3_ = tf.matmul(tf.matmul(g_vc2_inv_,G_SE3_),g_vc1_)
 
             G_SE3_inv_ = tf.reshape(tf_inv_SE3(tf.reshape(G_SE3_,[-1,4,4])),[-1, mask_ch,4,4])
-            
+
             f_obj_t_ = G_SE3_[:,:,0:3,3]
             f_obj_SO3_ = G_SE3_[:,:,0:3,0:3]
             b_obj_t_ = G_SE3_inv_[:,:,0:3,3]
@@ -557,19 +557,19 @@ class Pose_network(Network):
             vicon_supervision_loss_ = vicon_supervision_loss0_ + vicon_supervision_loss1_
 
             if self.supervision =='full':
-                self._p = 0 
-                self._pc = 0 
+                self._p = 1e-20  
+                self._pc = 1e-20  
                 self._d = 1e-2  
                 self._recon = 1e-1
-                self._vc = 1e0
-                self._v = 0
+                self._vc = 1e2
+                self._v = 1e-20 
             
             elif self.supervision == 'both_ends':
                 self._p = 1  
                 self._pc = 1e-1 
                 self._d = 1e-2  
                 self._recon = 1e-2 
-                self._vc = 1e0
+                self._vc = 1e2
                 self._v = 1e1 
 
             elif self.supervision == 'never':
