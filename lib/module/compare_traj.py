@@ -290,14 +290,16 @@ def compare(config):
                     #vision_T_t[0:3,0:3] = np.matmul(SO3_align, vision_T_t[0:3,0:3])
                     vision_se3_t = SE3_to_se3(vision_T_t)
                     #IPython.embed()
-                
+                if t == 0:
+                    init_diff = vicon_se3_t[3:6]-vision_se3_t[3:6]
+
                 transformed_vision_se3 = np.concatenate([transformed_vision_se3, np.expand_dims(SE3_to_se3(vision_T_t),0)], 0)
                 transformed_vision_plot = np.concatenate([transformed_vision_plot, np.expand_dims(vision_T_t[0:3,3],0)], 0)
                 transformed_vision_SE3 = np.concatenate([transformed_vision_SE3, np.expand_dims(vision_T_t,0)],0)
 
                 loss += np.sqrt(np.sum(np.square(SE3_to_se3(vicon_T_t)-SE3_to_se3(vision_T_t))))
                 position_error.append( np.expand_dims( np.sqrt(np.sum(np.square(vicon_T_t[0:3,3]-vision_T_t[0:3,3]))),0))
-                rotation_error.append( np.expand_dims( np.sqrt(np.sum(np.square(vicon_se3_t[3:6]-vision_se3_t[3:6]))),0))
+                rotation_error.append( np.expand_dims( np.sqrt(np.sum(np.square(vicon_se3_t[3:6]-vision_se3_t[3:6]-init_diff))),0))
                 total_position.append(np.expand_dims(vicon_T_t[0:3,3],0))
                 total_rotation.append(np.expand_dims(vicon_se3_t[3:6],0))
 
