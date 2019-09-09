@@ -57,7 +57,6 @@ def compare(config):
             
             vicon_traj_list.append(vicon_traj_loaded)
 
-        
         ## open cam time
         cam_start_time = cam_pos0[0] 
         cam_finish_time = cam_pos1[0]
@@ -77,7 +76,6 @@ def compare(config):
 
             vicon_start_idx = 0
             vicon_finish_idx = len(vicon_time)
-            
             
             for i in range(len(vicon_time)):
                 if vicon_time[i] < cam_start_time:
@@ -272,10 +270,14 @@ def compare(config):
             loss = 0
             position_error = []
             rotation_error = []
-
+            total_position = []
+            total_rotation = []
             for t in range(len(vicon_se3)):
                 ## time
-                vision_T = se3_to_SE3(vision_se3[t,:])
+                vicon_se3_t = vicon_se3[t,:]
+                vision_se3_t = vision_se3[t,:]
+                vicon_T_t = se3_to_SE3(vicon_se3[t,:])
+                vision_T_t = se3_to_SE3(vision_se3[t,:])
                 ############################### not alignment!!!!!!!!!
                 
                 if supervision == 'never':
@@ -284,22 +286,23 @@ def compare(config):
                     #_, g_vr = util.load_vicon(data_demo_dir+'/camera_position0.npy')
                     #SE3 = np.matmul(g_vr, g_rc)
                     
-                    vision_T = np.matmul(SE3, vision_T)
-                    vision_T[0:3,0:3] = np.matmul(SO3_align, vision_T[0:3,0:3])
+                    vision_T_t = np.matmul(SE3, vision_T_t)
+                    vision_T_t[0:3,0:3] = np.matmul(SO3_align, vision_T_t[0:3,0:3])
                     #IPython.embed()
                 
-                transformed_vision_se3 = np.concatenate([transformed_vision_se3, np.expand_dims(SE3_to_se3(vision_T),0)], 0)
-                transformed_vision_plot = np.concatenate([transformed_vision_plot, np.expand_dims(vision_T[0:3,3],0)], 0)
-                transformed_vision_SE3 = np.concatenate([transformed_vision_SE3, np.expand_dims(vision_T,0)],0)
+                transformed_vision_se3 = np.concatenate([transformed_vision_se3, np.expand_dims(SE3_to_se3(vision_T_t),0)], 0)
+                transformed_vision_plot = np.concatenate([transformed_vision_plot, np.expand_dims(vision_T_t[0:3,3],0)], 0)
+                transformed_vision_SE3 = np.concatenate([transformed_vision_SE3, np.expand_dims(vision_T_t,0)],0)
 
-
-                loss += np.sqrt(np.sum(np.square(SE3_to_se3(vicon_T)-SE3_to_se3(vision_T))))
-                position_error.append( np.expand_dims( np.sqrt(np.sum(np.square(vicon_T[0:3,3]-vision_T[0:3,3]))),0))
-                rotation_error.append( np.expand_dims( np.sqrt(np.sum(np.square( vicon_se3[3:6]-vision_se3[3:6]))),0))
+                loss += np.sqrt(np.sum(np.square(SE3_to_se3(vicon_T_t)-SE3_to_se3(vision_T_t))))
+                position_error.append( np.expand_dims( np.sqrt(np.sum(np.square(vicon_T_t[0:3,3]-vision_T_t[0:3,3]))),0))
+                rotation_error.append( np.expand_dims( np.sqrt(np.sum(np.square(vicon_se3_t[3:6]-vision_se3_t[3:6]))),0))
+                total_position.append(np.expand_dims(vicon_T_t[0:3,3],0))
+                total_rotation.append(np.expand_dims(vicon_se3_t[3:6],0))
 
                 ax.clear()
-                obj_vicon.apply_pose(vicon_se3[t,:])
-                obj_vision.apply_pose(SE3_to_se3(vision_T))
+                obj_vicon.apply_pose(vicon_se3_t)
+                obj_vision.apply_pose(vision_se3_t)
                 obj_vicon.plot(ax, scale = 0.015, linewidth = 3)
                 obj_vision.plot(ax, scale = 0.015, linewidth = 3)
                 ##
@@ -317,9 +320,14 @@ def compare(config):
             position_error = np.sum(position_error)/len(vision_traj) #np.concatenate(position_error,0)
             rotation_error = np.sum(rotation_error)/len(vision_traj) #np.concatenate(rotation_error,0)
             
+            total_position = np.concatenate(total_position,0)
+            total_rotation = np.concatenate(total_rotation,0)
+            
             np.savetxt(output_dir+'/'+demo+'/loss.txt',[loss])
             np.savetxt(output_dir+'/'+demo+'/position_error.txt',[position_error])
             np.savetxt(output_dir+'/'+demo+'/rotation_error.txt',[rotation_error])
+            np.savetxt(output_dir+'/'+demo+'/total_position.txt',total_position)
+            np.savetxt(output_dir+'/'+demo+'/total_rotation.txt',total_rotation)
 
             #################### save data for jigang
             pickle_dict = {'time': np.transpose(vision_time), 'se3': transformed_vision_se3, 'SE3':  transformed_vision_SE3}
