@@ -561,7 +561,7 @@ class Pose_network(Network):
                 self._pc = 1e-20  
                 self._d = 1e-2  
                 self._recon = 1e-1
-                self._vc = 1e1
+                self._vc = 1e-2
                 self._v = 1e-20 
             
             elif self.supervision == 'both_ends':
@@ -569,7 +569,7 @@ class Pose_network(Network):
                 self._pc = 1e-1 
                 self._d = 1e-2  
                 self._recon = 1e-2 
-                self._vc = 1e1
+                self._vc = 1e-2
                 self._v = 1e1 
 
             elif self.supervision == 'never':
