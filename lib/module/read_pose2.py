@@ -83,6 +83,7 @@ def read(config):
                     g_c_com = np.matmul(g_co, g_o_com)
                     SE3 = np.copy(g_c_com)
                 elif (supervision == 'both_ends') or (supervision == 'full'):
+                    # to do!!!
                     g_c_com0 = np.copy(g_c_com)
                     SE3 = np.copy(g_c_com0)
 
