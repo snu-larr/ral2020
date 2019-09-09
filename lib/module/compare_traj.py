@@ -302,7 +302,7 @@ def compare(config):
 
                 ax.clear()
                 obj_vicon.apply_pose(vision_se3_t)
-                obj_vision.apply_pose(SE3_to_se3(vision_T_t))
+                obj_vision.apply_pose(vision_se3_t)
                 obj_vicon.plot(ax, scale = 0.015, linewidth = 3)
                 obj_vision.plot(ax, scale = 0.015, linewidth = 3)
                 ##
