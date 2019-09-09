@@ -280,7 +280,7 @@ def compare(config):
                 vision_T_t = se3_to_SE3(vision_se3[t,:])
                 ############################### not alignment!!!!!!!!!
                 
-                if supervision == 'never':
+                if True: #supervision == 'never' or supervision == 'both_ends' :
                     #se3_rc = np.asarray([0.38457832, 0.09596953, -0.32798763, -0.34428167, 0.43178049, -0.17598158],dtype = np.float32)
                     #g_rc = se3_to_SE3(se3_rc)
                     #_, g_vr = util.load_vicon(data_demo_dir+'/camera_position0.npy')
