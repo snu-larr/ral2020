@@ -70,6 +70,12 @@ def read(config):
             g_co = se3_to_SE3(se30)
             g_oc = inv_SE3(g_co)
             g_o_com = np.matmul(g_oc, g_c_com)
+        else:
+            # to do!!
+            g_c_com = se3_to_SE3(com)
+            g_co = se3_to_SE3(se30)
+            g_oc = inv_SE3(g_co)
+            g_o_com = np.matmul(g_oc, g_c_com)
         
         for t in range(len(se3_traj)):
             ax.clear()
