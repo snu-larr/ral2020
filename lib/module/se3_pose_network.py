@@ -459,7 +459,9 @@ class se3_pose_network(Network):
             usingVicon1_ = tf.expand_dims(usingVicon1_ph, 1)
             se3_0_hard_ = tf.multiply(usingVicon0_, vicon0_ph)+tf.multiply(1-usingVicon0_, se3_0_)
             se3_1_hard_ = tf.multiply(usingVicon1_, vicon1_ph)+tf.multiply(1-usingVicon1_, se3_1_)
-        
+
+
+            G_SE3_ = self.get_G(se3_0_ , se3_1_)
             if self.supervision == 'never':                
                 # actual notation : 
                 # g_vr * g_rc = g_vc
@@ -489,7 +491,6 @@ class se3_pose_network(Network):
                 g_vc2_inv_ = tf.reshape(tf_inv_SE3(tf.reshape(g_vc2_,[-1,4,4])),[-1,mask_ch,4,4])
                 G_SE3_ = tf.matmul(tf.matmul(g_vc2_inv_,G_SE3_),g_vc1_)
 
-            G_SE3_ = self.get_G(se3_0_ , se3_1_)
             G_SE3_inv_ = tf.reshape(tf_inv_SE3(tf.reshape(G_SE3_,[-1,4,4])),[-1, mask_ch,4,4])
             
             f_obj_t_ = G_SE3_[:,:,0:3,3]
