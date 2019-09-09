@@ -82,6 +82,9 @@ def read(config):
                     g_co = se3_to_SE3(xi_co)
                     g_c_com = np.matmul(g_co, g_o_com)
                     SE3 = np.copy(g_c_com)
+                elif (supervision == 'both_ends') or (supervision == 'full'):
+                    g_c_com0 = np.copy(g_c_com)
+                    SE3 = np.copy(g_c_com0)
 
                 T = SE3[0:3,3]
                 u,v = projection(T, intrinsic)
