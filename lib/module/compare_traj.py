@@ -286,8 +286,8 @@ def compare(config):
                     #_, g_vr = util.load_vicon(data_demo_dir+'/camera_position0.npy')
                     #SE3 = np.matmul(g_vr, g_rc)
                     
-                    vision_T_t = np.matmul(SE3, vision_T_t)
-                    #vision_T_t[0:3,0:3] = np.matmul(SO3_align, vision_T_t[0:3,0:3])
+                    #vision_T_t = np.matmul(SE3, vision_T_t)
+                    vision_T_t[0:3,0:3] = np.matmul(SO3_align, vision_T_t[0:3,0:3])
                     vision_se3_t = SE3_to_se3(vision_T_t)
                     #IPython.embed()
                 if t == 0:
@@ -299,7 +299,7 @@ def compare(config):
 
                 loss += np.sqrt(np.sum(np.square(SE3_to_se3(vicon_T_t)-SE3_to_se3(vision_T_t))))
                 position_error.append( np.expand_dims( np.sqrt(np.sum(np.square(vicon_T_t[0:3,3]-vision_T_t[0:3,3]))),0))
-                rotation_error.append( np.expand_dims( np.sqrt(np.sum(np.square(vicon_se3_t[3:6]-vision_se3_t[3:6]-init_diff))),0))
+                rotation_error.append( np.expand_dims( np.sqrt(np.sum(np.square(vicon_se3_t[3:6]-vision_se3_t[3:6]))),0))
                 total_position.append(np.expand_dims(vicon_T_t[0:3,3],0))
                 total_rotation.append(np.expand_dims(vicon_se3_t[3:6],0))
 
