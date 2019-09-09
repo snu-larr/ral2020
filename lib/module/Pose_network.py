@@ -461,7 +461,6 @@ class Pose_network(Network):
             se3_1_hard_ = tf.multiply(usingVicon1_, vicon1_ph)+tf.multiply(1-usingVicon1_, se3_1_)
         
             G_SE3_ = self.get_G(se3_0_ , se3_1_)
-            G_SE3_inv_ = tf.reshape(tf_inv_SE3(tf.reshape(G_SE3_,[-1,4,4])),[-1, mask_ch,4,4])
             
             if self.supervision == 'never':                
                 # actual notation : 
@@ -492,6 +491,8 @@ class Pose_network(Network):
                 g_vc2_inv_ = tf.reshape(tf_inv_SE3(tf.reshape(g_vc2_,[-1,4,4])),[-1,mask_ch,4,4])
                 G_SE3_ = tf.matmul(tf.matmul(g_vc2_inv_,G_SE3_),g_vc1_)
 
+            G_SE3_inv_ = tf.reshape(tf_inv_SE3(tf.reshape(G_SE3_,[-1,4,4])),[-1, mask_ch,4,4])
+            
             f_obj_t_ = G_SE3_[:,:,0:3,3]
             f_obj_SO3_ = G_SE3_[:,:,0:3,0:3]
             b_obj_t_ = G_SE3_inv_[:,:,0:3,3]
