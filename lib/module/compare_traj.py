@@ -210,7 +210,7 @@ def compare(config):
             plt.close('all')
             ## align translation
             x0 = np.random.rand(6)
-            optimize_len = int(len(vision_plot))
+            optimize_len = int(0.5*len(vision_plot))
             ########################## for task3 (occlusion)
             #if task_name == 'task3':
             #    optimize_len = 100
