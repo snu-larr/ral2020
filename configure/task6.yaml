@@ -30,7 +30,7 @@ segment:
 pose: 
     batch_size : 1
     scale : 0.5
-    supervision : 'full' #'never' #'full' #'both_ends'
+    supervision : 'both_ends' #'never' #'full' #'both_ends'
     learning_rate: 0.00001 
 
 discriminator:
