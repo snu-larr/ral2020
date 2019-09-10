@@ -280,18 +280,16 @@ def compare(config):
                 vision_T_t = se3_to_SE3(vision_se3[t,:])
                 ############################### not alignment!!!!!!!!!
                 
-                if True: #supervision == 'never' or supervision == 'both_ends' :
-                    #se3_rc = np.asarray([0.38457832, 0.09596953, -0.32798763, -0.34428167, 0.43178049, -0.17598158],dtype = np.float32)
-                    #g_rc = se3_to_SE3(se3_rc)
-                    #_, g_vr = util.load_vicon(data_demo_dir+'/camera_position0.npy')
-                    #SE3 = np.matmul(g_vr, g_rc)
+                if supervision == 'never': 
+                    se3_rc = np.asarray([0.333653152, -0.19545771, -0.41434446, -0.16426212, 0.4854613, -0.28981152],dtype = np.float32)
+                    g_rc = se3_to_SE3(se3_rc)
+                    _, g_vr = util.load_vicon(data_demo_dir+'/camera_position0.npy')
+                    SE3 = np.matmul(g_vr, g_rc)
                     
-                    vision_T_t = np.matmul(SE3, vision_T_t)
-                    vision_T_t[0:3,0:3] = np.matmul(SO3_align, vision_T_t[0:3,0:3])
-                    vision_se3_t = SE3_to_se3(vision_T_t)
-                    #IPython.embed()
-                if t == 0:
-                    init_diff = vicon_se3_t[3:6]-vision_se3_t[3:6]
+                vision_T_t = np.matmul(SE3, vision_T_t)
+                vision_T_t[0:3,0:3] = np.matmul(SO3_align, vision_T_t[0:3,0:3])
+                vision_se3_t = SE3_to_se3(vision_T_t)
+                #IPython.embed()
 
                 transformed_vision_se3 = np.concatenate([transformed_vision_se3, np.expand_dims(SE3_to_se3(vision_T_t),0)], 0)
                 transformed_vision_plot = np.concatenate([transformed_vision_plot, np.expand_dims(vision_T_t[0:3,3],0)], 0)
