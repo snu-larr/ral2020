@@ -247,6 +247,7 @@ def compare(config):
                 np.save(output_dir+'/'+demo+'/optimization.npy',result)
             print('optimized_loss:'+str(objective_fn(result.x)))   
             print(result.x)
+            
             SE3 = se3_to_SE3(result.x)   
             
             ### align orientation
@@ -280,11 +281,11 @@ def compare(config):
                 vision_T_t = se3_to_SE3(vision_se3[t,:])
                 ############################### not alignment!!!!!!!!!
                 
-                if supervision == 'never': 
-                    se3_rc = np.asarray([0.333653152, -0.19545771, -0.41434446, -0.16426212, 0.4854613, -0.28981152],dtype = np.float32)
-                    g_rc = se3_to_SE3(se3_rc)
-                    _, g_vr = util.load_vicon(data_demo_dir+'/camera_position0.npy')
-                    SE3 = np.matmul(g_vr, g_rc)
+                #if supervision == 'never': 
+                #    se3_rc = np.asarray([0.333653152, -0.19545771, -0.41434446, -0.16426212, 0.4854613, -0.28981152],dtype = np.float32)
+                #    g_rc = se3_to_SE3(se3_rc)
+                #    _, g_vr = util.load_vicon(data_demo_dir+'/camera_position0.npy')
+                #    SE3 = np.matmul(g_vr, g_rc)
                     
                 vision_T_t = np.matmul(SE3, vision_T_t)
                 vision_T_t[0:3,0:3] = np.matmul(SO3_align, vision_T_t[0:3,0:3])
