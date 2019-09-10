@@ -612,6 +612,7 @@ class Pose_network(Network):
         self.tensors['point_cloud1'] = point_cloud1_
         self.tensors['embed0'] = embed0_
         self.tensors['embed1'] = embed1_
+        self.tensors['se3_rc'] = se3_rc_
         self.tensors['se3_0'] = se3_0_
         self.tensors['se3_1'] = se3_1_
         self.tensors['mask0'] = mask0_
@@ -912,7 +913,7 @@ class Pose_network(Network):
                 traceback.print_exc()
                 print('current task:'+self.task_name)
                 print('saving weight...')
-                #IPython.embed()
+                IPython.embed()
                 time.sleep(3)
                 saver.save(sess, self.weight_dir+'/u_net.ckpt')
                 break
