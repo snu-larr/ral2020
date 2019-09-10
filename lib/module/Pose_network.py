@@ -440,11 +440,8 @@ class Pose_network(Network):
             depth1_sigmoid_ = tf.expand_dims(unet1_sigmoid_[:,:,:,0],3)
             recovered_depth0_ = self.unnormalize_depth(depth0_sigmoid_)[:,:,:,0] 
             recovered_depth1_ = self.unnormalize_depth(depth1_sigmoid_)[:,:,:,0] 
-            #full_depth0_ = tf.multiply(nan0_ph, recovered_depth0_) + tf.multiply(1-nan0_ph, depth0_ph)
-            #full_depth1_ = tf.multiply(nan1_ph, recovered_depth1_) + tf.multiply(1-nan1_ph, depth1_ph)
-            ############################################delete!!!
-            full_depth0_ = depth0_ph
-            full_depth1_ = depth1_ph
+            full_depth0_ = tf.multiply(nan0_ph, recovered_depth0_) + tf.multiply(1-nan0_ph, depth0_ph)
+            full_depth1_ = tf.multiply(nan1_ph, recovered_depth1_) + tf.multiply(1-nan1_ph, depth1_ph)
             
             ## add background
             mask0_ = tf.concat( [tf.zeros_like(tf.expand_dims(mask0_ph[:,:,:,0],3)), mask0_ph], 3)
@@ -463,7 +460,7 @@ class Pose_network(Network):
             se3_0_hard_ = tf.multiply(usingVicon0_, vicon0_ph)+tf.multiply(1-usingVicon0_, se3_0_)
             se3_1_hard_ = tf.multiply(usingVicon1_, vicon1_ph)+tf.multiply(1-usingVicon1_, se3_1_)
         
-            G_SE3_ = self.get_G(se3_0_ , se3_1_)
+            G_SE3_ = self.get_G(se3_0_hard_ , se3_1_hard_)
             
             if self.supervision == 'never':                
                 # actual notation : 
@@ -564,7 +561,7 @@ class Pose_network(Network):
                 self._pc = 1e-1  
                 self._d = 1e-2  
                 self._recon = 1e-2
-                self._vc = 1e-2
+                self._vc = 1e-1
                 self._v = 1e1
             
             elif self.supervision == 'both_ends':
@@ -572,14 +569,14 @@ class Pose_network(Network):
                 self._pc = 1e-1 
                 self._d = 1e-2  
                 self._recon = 1e-2 
-                self._vc = 1e-2
+                self._vc = 1e-1
                 self._v = 1e1 
 
             elif self.supervision == 'never':
                 self._p = 1e1   
                 self._pc = 1e-1  
-                self._d = 0 #####################################1e-2 delete three parts!   
-                self._recon =  0 ################################1e-2 
+                self._d = 1e-2    
+                self._recon = 1e-2 
                 self._vc = 0
                 self._v = 1e1 
 
