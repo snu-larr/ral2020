@@ -147,9 +147,9 @@ def se3_to_SE3(xi):
         SE3 = RT_to_SE3(R,T)
     else:
         ## (Warning!!) if theta = ||w||  > 3.1415; then algorithm fails
-        w_norm = np.sqrt( w[0]*w[0]+w[1]*w[1]+w[2]*w[2])
-        new_w_norm = (w_norm*1e10)%(np.pi*1e10)/(1e10)
-        
+        #w_norm = np.sqrt( w[0]*w[0]+w[1]*w[1]+w[2]*w[2]) ####################################################
+        #new_w_norm = (w_norm*1e10)%(np.pi*1e10)/(1e10) ##### ###############################################
+        new_w_norm = w_norm ####################################################
         ######################################3
         new_w = (new_w_norm/w_norm) * w
         
@@ -168,7 +168,8 @@ def SE3_to_se3(SE3):
     T = SE3[0:3,3]
     thetha = np.arccos((np.trace(R) - 1)/2 )
     ## (Warning!!) if theta = ||w||  > 3.1415; then algorithm fails
-    thetha = (thetha*1e10)%(np.pi*1e10)/(1e10)
+    #thetha = (thetha*1e10)%(np.pi*1e10)/(1e10) ####################################################
+    
     if thetha == 0:
         v = T
         w = np.zeros(3)
