@@ -133,12 +133,12 @@ def compare(config):
                 SE31 = se3_to_SE3(x0[6:12])
                 loss = 0
                 for t in range(optimize_len):
-                    #transformed = (np.matmul(SE3, se3_to_SE3(vision_se3[t,:])))
-                    #transformed_se3 = SE3_to_se3(transformed)
-                    #loss += np.sum(np.square(transformed_se3[3:6]-vicon_se3[t,3:6]))
+                    transformed = np.matmul(np.matmul(SE3, se3_to_SE3(vision_se3[t,:])),SE31)
+                    transformed_se3 = SE3_to_se3(transformed)
+                    loss += np.sum(np.square(transformed_se3[0:3]-vicon_se3[t,0:3]))
                     
-                    transformed = un_homo( np.matmul(np.matmul(SE30, to_homo(vision_plot[t,:])),SE31))
-                    loss += np.sum(np.square(transformed-vicon_plot[t,:]))
+                    #transformed = un_homo( np.matmul(np.matmul(SE30, to_homo(vision_plot[t,:])),SE31))
+                    #loss += np.sum(np.square(transformed-vicon_plot[t,:]))
                 return loss
             print(demo)
             print('initial_loss:'+str(objective_fn(x0)))
