@@ -129,8 +129,8 @@ def compare(config):
             #if task_name == 'task3':
             #    optimize_len = 100
             def objective_fn(x0):
-                SE30 = se3_to_SE3(x[0:6])
-                SE31 = se3_to_SE3(x[6:12])
+                SE30 = se3_to_SE3(x0[0:6])
+                SE31 = se3_to_SE3(x0[6:12])
                 loss = 0
                 for t in range(optimize_len):
                     #transformed = (np.matmul(SE3, se3_to_SE3(vision_se3[t,:])))
