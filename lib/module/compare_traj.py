@@ -123,20 +123,21 @@ def compare(config):
                 
             plt.close('all')
             ## align translation
-            x0 = np.random.rand(6)
+            x0 = np.random.rand(12)
             optimize_len = int(len(vision_plot))
             ########################## for task3 (occlusion)
             #if task_name == 'task3':
             #    optimize_len = 100
             def objective_fn(x0):
-                SE3 = se3_to_SE3(x0)
+                SE30 = se3_to_SE3(x[0:6])
+                SE31 = se3_to_SE3(x[6:12])
                 loss = 0
                 for t in range(optimize_len):
                     #transformed = (np.matmul(SE3, se3_to_SE3(vision_se3[t,:])))
                     #transformed_se3 = SE3_to_se3(transformed)
                     #loss += np.sum(np.square(transformed_se3[3:6]-vicon_se3[t,3:6]))
                     
-                    transformed = un_homo(np.matmul(SE3, to_homo(vision_plot[t,:])))
+                    transformed = un_homo( np.matmul(np.matmul(SE30, to_homo(vision_plot[t,:])),SE31))
                     loss += np.sum(np.square(transformed-vicon_plot[t,:]))
                 return loss
             print(demo)
@@ -162,12 +163,12 @@ def compare(config):
             print('optimized_loss:'+str(objective_fn(result.x)))   
             print(result.x)
             
-            SE3 = se3_to_SE3(result.x)   
-            
+            SE30 = se3_to_SE3(result.x[0:6])   
+            SE31 = se3_to_SE3(result.x[6:12])   
             ### align orientation
             #'''
             
-            vision_SE30 = np.matmul(SE3, se3_to_SE3(vision_se3[0,:]))
+            vision_SE30 = np.matmul(np.matmul(SE30, se3_to_SE3(vision_se3[0,:])),SE31)
             vicon_SE30 = se3_to_SE3(vicon_se3[0,:])
             R_target = vicon_SE30[0:3,0:3]
             R_ori = vision_SE30[0:3,0:3] 
@@ -201,7 +202,7 @@ def compare(config):
                 #    _, g_vr = util.load_vicon(data_demo_dir+'/camera_position0.npy')
                 #    SE3 = np.matmul(g_vr, g_rc)
                     
-                vision_T_t = np.matmul(SE3, vision_T_t)
+                vision_T_t = np.matmul(np.matmul(SE30, vision_T_t),SE31)
                 vision_T_t[0:3,0:3] = np.matmul(SO3_align, vision_T_t[0:3,0:3])
                 vision_se3_t = SE3_to_se3(vision_T_t)
                 #IPython.embed()
