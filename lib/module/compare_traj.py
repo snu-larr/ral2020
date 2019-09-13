@@ -119,7 +119,7 @@ def compare(config):
 
                 vicon_se3_element = SE3_to_se3(se3_to_SE3(clipped_vicon[v_t,:]))
                 vicon_se3  = np.concatenate([vicon_se3,  np.expand_dims(vicon_se3_element,0) ], 0)
-                vision_se3 = np.concatenate([vision_se3, np.expand_dims(vision_traj[t,:],0)], 0)
+                vision_se3 = np.concatenate([vision_se3, np.expand_dims( SE3_to_se3(vision_T[t,:]),0)], 0)
                 
             plt.close('all')
             ## align translation
