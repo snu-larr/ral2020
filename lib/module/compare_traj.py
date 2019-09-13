@@ -133,7 +133,7 @@ def compare(config):
                 SE31 = se3_to_SE3(x0[6:12])
                 loss = 0
                 for t in range(optimize_len):
-                    transformed = np.matmul(np.matmul(SE3, se3_to_SE3(vision_se3[t,:])),SE31)
+                    transformed = np.matmul(np.matmul(SE30, se3_to_SE3(vision_se3[t,:])),SE31)
                     transformed_se3 = SE3_to_se3(transformed)
                     loss += np.sum(np.square(transformed_se3[0:3]-vicon_se3[t,0:3]))
                     
