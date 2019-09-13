@@ -28,9 +28,9 @@ segment:
     learning_rate: 0.00001
 
 pose: 
-    batch_size : 1
+    batch_size : 8
     scale : 0.5
-    supervision : 'both_ends' #'never' #'full' #'both_ends'
+    supervision : 'never' #'never' #'full' #'both_ends'
     learning_rate: 0.00001 
 
 discriminator:
