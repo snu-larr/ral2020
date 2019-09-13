@@ -150,7 +150,7 @@ def se3_to_SE3(xi):
         w_norm = np.sqrt( w[0]*w[0]+w[1]*w[1]+w[2]*w[2]) 
         new_w_norm = (w_norm*1e10)%(np.pi*1e10)/(1e10) 
         ######################################3
-        (new_w_norm/w_norm) * w 
+        new_w = (new_w_norm/w_norm) * w 
         
         w_hat = wedge(new_w)
         #R = scipy.linalg.expm(w_hat)
