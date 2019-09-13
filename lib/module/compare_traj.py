@@ -91,76 +91,6 @@ def compare(config):
             len_vision = len(vision_traj)
             vision_time = np.arange(clipped_vicon_time[0], clipped_vicon_time[-1], (clipped_vicon_time[-1]-clipped_vicon_time[0])/len_vision)
             
-            
-            
-            #diff_clipeed_vicon = 
-            #diff_vision_traj = 
-            '''
-            #####################################################
-            fig = plt.figure()
-            ax1 = fig.add_subplot(311)
-            ax1.plot(clipped_vicon_time, clipped_vicon[:,0],'--')
-            ax1.plot(vision_time, vision_traj[:,0])
-            ax1.set_title('se3[0:3]')
-
-            ax2 = fig.add_subplot(312)
-            ax2.plot(clipped_vicon_time, clipped_vicon[:,1],'--')
-            ax2.plot(vision_time, vision_traj[:,1])
-
-            ax3 = fig.add_subplot(313)
-            ax3.plot(clipped_vicon_time, clipped_vicon[:,2],'--')
-            ax3.plot(vision_time, vision_traj[:,2])
-            fig.savefig(output_dir+'/'+demo+'/plot/xyz.png')
-            #####################################################
-            fig = plt.figure()
-            ax1 = fig.add_subplot(311)
-            ax1.plot(clipped_vicon_time, clipped_vicon[:,3],'--')
-            ax1.plot(vision_time, vision_traj[:,3])
-            ax1.set_title('se3[3:6]')
-
-            ax2 = fig.add_subplot(312)
-            ax2.plot(clipped_vicon_time, clipped_vicon[:,4],'--')
-            ax2.plot(vision_time, vision_traj[:,4])
-
-            ax3 = fig.add_subplot(313)
-            ax3.plot(clipped_vicon_time, clipped_vicon[:,5],'--')
-            ax3.plot(vision_time, vision_traj[:,5])
-            fig.savefig(output_dir+'/'+demo+'/plot/wxwywz.png')
-            plt.close()
-            #####################################################
-            fig = plt.figure()
-            ax1 = fig.add_subplot(311)
-            ax1.plot(clipped_vicon_time, clipped_vicon[:,0],'--')
-            ax1.plot(vision_time, vision_traj[:,0])
-            ax1.set_title('diff_se3[0:3]')
-
-            ax2 = fig.add_subplot(312)
-            ax2.plot(clipped_vicon_time, clipped_vicon[:,1],'--')
-            ax2.plot(vision_time, vision_traj[:,1])
-
-            ax3 = fig.add_subplot(313)
-            ax3.plot(clipped_vicon_time, clipped_vicon[:,2],'--')
-            ax3.plot(vision_time, vision_traj[:,2])
-            fig.savefig(output_dir+'/'+demo+'/plot/diff_xyz.png')
-            plt.close()
-            #####################################################
-            fig = plt.figure()
-            ax1 = fig.add_subplot(311)
-            ax1.plot(clipped_vicon_time, clipped_vicon[:,0],'--')
-            ax1.plot(vision_time, vision_traj[:,0])
-            ax1.set_title('diff_se3[0:3]')
-
-            ax2 = fig.add_subplot(312)
-            ax2.plot(clipped_vicon_time, clipped_vicon[:,1],'--')
-            ax2.plot(vision_time, vision_traj[:,1])
-
-            ax3 = fig.add_subplot(313)
-            ax3.plot(clipped_vicon_time, clipped_vicon[:,2],'--')
-            ax3.plot(vision_time, vision_traj[:,2])
-            fig.savefig(output_dir+'/'+demo+'/plot/diff+wxwywz.png')
-            plt.close()
-            #####################################################
-            '''
             fig = plt.figure()
             ax = fig.add_subplot(111, projection = '3d')
             vicon_plot = np.zeros((0,3))
@@ -191,22 +121,6 @@ def compare(config):
                 vicon_se3  = np.concatenate([vicon_se3,  np.expand_dims(vicon_se3_element,0) ], 0)
                 vision_se3 = np.concatenate([vision_se3, np.expand_dims(vision_traj[t,:],0)], 0)
                 
-                '''
-                ax.clear()
-                obj_vicon.apply_pose(clipped_vicon[v_t,:])
-                obj_vision.apply_pose(vision_traj[t,:])
-                obj_vicon.plot(ax, scale = 0.05, linewidth = 3)
-                obj_vision.plot(ax, scale = 0.05, linewidth = 3)
-                ##
-                ax.plot(vicon_plot[:,0], vicon_plot[:,1], vicon_plot[:,2], '--', color = 'r', alpha = 0.5, linewidth = 4)
-                ax.plot(vision_plot[:,0], vision_plot[:,1], vision_plot[:,2], color = 'g', alpha = 0.5, linewidth = 3)
-                ###
-                util.set_axes_equal(ax)
-                ax.set_xlabel('x(m)')
-                ax.set_ylabel('y(m)')
-                ax.set_zlabel('z(m)')
-                fig.savefig(output_dir+'/%05d.png'%t)
-                '''
             plt.close('all')
             ## align translation
             x0 = np.random.rand(6)
@@ -220,7 +134,7 @@ def compare(config):
                 for t in range(optimize_len):
                     transformed = (np.matmul(SE3, se3_to_SE3(vision_se3[t,:])))
                     transformed_se3 = SE3_to_se3(transformed)
-                    loss += np.sum(np.square(transformed_se3-vicon_se3[t,:]))
+                    loss += np.sum(np.square(transformed_se3[0:3]-vicon_se3[t,0:3]))
                     
                     #loss += np.sum(np.square(transformed-se3_to_SE3(vicon_se3[t,:])))
                     #transformed = un_homo(np.matmul(SE3, to_homo(vision_plot[t,:])))
