@@ -1,4 +1,4 @@
-# Code attachment for Ral/ICRA2020
+# Code attachment for RAL/ICRA2020
 This code is an example of fully unsupervised training of objects 6d-pose in a scene.
 
 ## Requirements:
