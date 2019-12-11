@@ -11,9 +11,15 @@ scipy >- 1.3.0 <br />
 tensorflow-gpu == 1.13.1 <br />
 tflearn >= 0.3.2 <br />
 
-## Dataset available:
+## Download dataset:
 https://drive.google.com/drive/folders/1vLjtZ5F-90iEiidCS3EHYymBfYyUdstz?usp=sharing <br />
-download data to './data/'
+
+1) download rgb-d dataset ('./data/[task_name]' in google drive) and unzip in './data/[task_name]' <br />
+(For example, './data/moving-a-block') <br />
+
+2) downlaod semantic label ('./output/[task_name]' in google drive) and unzip in './output/[task_name]' <br /> 
+(For example, './output/moving-a-block') <br />
+
 
 ## Step1 : Training pose network
 The requirements for training the pose network are following:
