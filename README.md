@@ -11,6 +11,9 @@ scipy >- 1.3.0 <br />
 tensorflow-gpu == 1.13.1 <br />
 tflearn >= 0.3.2 <br />
 
+## Dataset available:
+
+
 ## Step1 : Training pose network
 The requirements for training the pose network are following:
 1) ./data/[task_name]/[demo_name]/ depth and rgb image
