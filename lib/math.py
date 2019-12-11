@@ -1,6 +1,7 @@
 from __future__ import division
 
 import copy
+import math
 import numpy as np
 import scipy
 import tensorflow as tf
@@ -20,6 +21,19 @@ euler_to_SO3(eulerZYX) == omega_to_SO3(rotvec)
 def np_sigmoid(x):
     sigm = 1./(1.+np.exp(-x))
     return sigm
+
+def R_to_euler(R) :
+    sy = math.sqrt(R[0,0] * R[0,0] +  R[1,0] * R[1,0])     
+    singular = sy < 1e-6
+    if  not singular :
+        x = math.atan2(R[2,1] , R[2,2])
+        y = math.atan2(-R[2,0], sy)
+        z = math.atan2(R[1,0], R[0,0])
+    else :
+        x = math.atan2(-R[1,2], R[1,1])
+        y = math.atan2(-R[2,0], sy)
+        z = 0
+    return np.array([x, y, z])
 
 def euler_to_SO3(euler, sined = False, angle_type = 'radian'):
     '''
@@ -150,7 +164,7 @@ def se3_to_SE3(xi):
         w_norm = np.sqrt( w[0]*w[0]+w[1]*w[1]+w[2]*w[2]) 
         new_w_norm = (w_norm*1e10)%(np.pi*1e10)/(1e10) 
         ######################################3
-        new_w = w #(new_w_norm/w_norm) * w  ############################################
+        new_w = (new_w_norm/w_norm) * w  # w ############################################
         
         w_hat = wedge(new_w)
         #R = scipy.linalg.expm(w_hat)
@@ -159,20 +173,21 @@ def se3_to_SE3(xi):
         R = np.eye(3) + (w_hat/w_norm) * np.sin(w_norm) + (np.matmul(w_hat,w_hat)/(w_norm*w_norm)) * (1 - np.cos(w_norm))
         T = np.matmul(np.eye(3) + (((1 - np.cos(w_norm)) / (w_norm**2)) * w_hat) + (((w_norm - np.sin(w_norm)) / (w_norm**3)) * np.matmul(w_hat,w_hat)),v)
         SE3 = RT_to_SE3(R,T)
-
     return SE3
 
 def SE3_to_se3(SE3):
     R = SE3[0:3,0:3]
     T = SE3[0:3,3]
-    thetha = np.arccos((np.trace(R) - 1)/2 )
-    ## (Warning!!) if theta = ||w||  > 3.1415; then algorithm fails
-    ############################################thetha = (thetha*1e10)%(np.pi*1e10)/(1e10) 
     
-    if thetha == 0:
+    if np.sum( np.square(R-np.eye(3))) < 1e-10:
         v = T
         w = np.zeros(3)
     else:   
+        thetha = np.arccos((np.trace(R) - 1)/2 )
+        ## (Warning!!) if theta = ||w||  > 3.1415; then algorithm fails
+        ## R = I ==> theta = +-inf
+        ############################################
+        thetha = (thetha*1e10)%(np.pi*1e10)/(1e10) 
         w = thetha * (1./(2.*np.sin(thetha)))*np.asarray([R[2,1] - R[1,2], R[0,2] - R[2,0], R[1,0] - R[0,1]])
         w_hat = wedge(w)
         v = np.matmul(np.eye(3) - (1/2 * (w_hat)) + (((1/(thetha * thetha)) * (1 - ((thetha * np.sin(thetha)) / (2*(1 - np.cos(thetha)))))) * np.matmul(w_hat, w_hat)),T)

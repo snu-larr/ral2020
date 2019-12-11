@@ -1,162 +1,280 @@
-from __future__ import division
-
-'''
-This is python2  code due to the dependecy of rospy to python2
-'''
-
+import argparse
 import glob
 import os
+import signal
+import subprocess
 import sys
 from termcolor import colored
-import rosbag
+import time
+import traceback
 
-from scipy import io
+import cv2
+from cv_bridge import CvBridge, CvBridgeError
 import IPython
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+import numpy as np
+import rosbag
 
-
-from lib.math import *
 from lib import util
+from lib import vision
+from lib.math import *
 
 if __name__ == '__main__':
     try:
-        task_name = sys.argv[1] 
-    except:
-        print(colored('Type like: python ./read_bag.py [task_name]','red'))
-
-    data_dir = './data/'+task_name
-    output_dir = './output/vicon/'+task_name
-    demo_list = os.listdir(data_dir)
+        parser = argparse.ArgumentParser()
+        parser.add_argument('task_name')
+        parser.add_argument('--clear', action = 'store_true')
     
-    for demo in demo_list:
-        bag_list = glob.glob(data_dir+'/'+demo+'/*.bag')
-        print(demo)
-        print(bag_list)
-        output_path = output_dir+'/'+demo
-        util.create_dir(output_path, clear = True) 
+        args = parser.parse_args()
+        task_name = args.task_name
+        CLEAR = args.clear
+    except:
+        traceback.print_exc()
+        print(colored('type like: python3 ./read_bag.py [task_name] [option]'),'r')
+        print(colored('ex: python3 ./read_bag.py task1 --clear'))
+    
+    task_dir = './data/'+task_name
+    demo_dirs = sorted(os.listdir(task_dir))
+    for demo_name in demo_dirs:
+        ## 1. reindex rosbag file
+        reindex_dir = task_dir + '/' + demo_name +'/reindex'
+        bag_path = task_dir + '/' + demo_name +'/raw.bag.active' 
+        util.create_dir(reindex_dir, clear = True)
+        
+        print(colored('reindex bag file','blue'))
+        reindex_cmd = "rosbag reindex --output-dir=" + reindex_dir +" "+bag_path
+        os.system(reindex_cmd)
 
-        ### read vicon and save at './output/vicon/task_name/demo_name/objet_name_pose.npy'
-        all_pose = []
-        for bag_file in bag_list:
-            bag = rosbag.Bag(bag_file)
-            object_name = bag_file.split('/')[-1].split('.')[0]
+        ## 2. extract infomation from reindexed bag
+        print(colored('extract bag file','blue'))
+        demo_dir = task_dir + '/' + demo_name
+        rgb_dir = demo_dir + '/rgb_raw'
+        depth_dir = demo_dir + '/depth_raw'
+        vicon_dir = demo_dir + '/vicon_raw'
+        object_names = util.load_txt('./configure/'+task_name+'_objects.txt')
+        object_names += ['k_giant_ur3', 'k_zed']
+        vicon_topics = ['/vicon/'+name+'/'+name for name in object_names ]
+        
+        util.create_dir(rgb_dir, clear = True)
+        util.create_dir(depth_dir, clear = True)
+        util.create_dir(vicon_dir, clear = True)
 
-            original_pose = []
-            se3 = []
-            pose = []
-            
-            prev_t = 0
-            for topic, msg, t in bag.read_messages():
-                ros_time = msg.header.stamp.secs + 1e-9*msg.header.stamp.nsecs
-                if prev_t == 0:
-                    prev_t = ros_time
-                log_time = ros_time-prev_t
+        for obj in object_names:
+            util.create_dir(vicon_dir+'/'+obj, clear = True)
+
+        ## reindex bag file    
+        reindex_path = reindex_dir +'/raw.bag.active'
+        bag = rosbag.Bag(reindex_path)
+
+        ## log vicon
+        bridge = CvBridge()
+        ros_time0 = 0
+        for topic, msg, t in bag.read_messages():
+            ros_time = int( 1e-6*(1e9*msg.header.stamp.secs + msg.header.stamp.nsecs))
+            if ros_time0 == 0:
+                ros_time0 = ros_time
+            ros_time = ros_time-ros_time0
+            if topic == '/zed/zed_node/rgb/image_rect_color':
+                rgb_file = rgb_dir + '/' + str(ros_time).zfill(10)
+                cv_rgb = bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+                cv2.imwrite(rgb_file+'.png', cv_rgb)
+                plt_rgb = cv_rgb[:,:,::-1]
+                np.save(rgb_file+'.npy', plt_rgb)
                 
-                posex = msg.pose.position.x
-                posey = msg.pose.position.y
-                posez = msg.pose.position.z
+            elif topic == '/zed/zed_node/depth/depth_registered':
+                depth_file = depth_dir + '/' + str(ros_time).zfill(10)
+                cv_depth = bridge.imgmsg_to_cv2(msg, desired_encoding='32FC1')
+                plt.close()
+                plt.imshow(cv_depth)
+                plt.savefig(depth_file+'.png')
+                plt.close()
+                #cv2.imwrite(depth_file+'.png', cv_depth)
+                np.save(depth_file+'.npy', cv_depth)
 
-                orix = msg.pose.orientation.x
-                oriy = msg.pose.orientation.y
-                oriz = msg.pose.orientation.z
-                oriw = msg.pose.orientation.w
+            elif topic in vicon_topics:
+                obj_name = os.path.basename(topic)
+                vicon_file = vicon_dir + '/' + obj_name+'/'+str(ros_time).zfill(10)
+                
+                posex = msg.transform.translation.x
+                posey = msg.transform.translation.y
+                posez = msg.transform.translation.z
+
+                orix = msg.transform.rotation.x
+                oriy = msg.transform.rotation.y
+                oriz = msg.transform.rotation.z
+                oriw = msg.transform.rotation.w
                 quaternion = [posex, posey, posez, orix, oriy, oriz, oriw]
-                se3_t = quaternion_to_se3(quaternion)
-                #se3.append(np.expand_dims(se3_t,0))
-                se3_t = SE3_to_se3(se3_to_SE3(se3_t)) # rescale
-                se3.append(np.expand_dims([ros_time, se3_t[0], se3_t[1],se3_t[2],se3_t[3],se3_t[4],se3_t[5]],0))
+                se3 = quaternion_to_se3(quaternion)
+                se3 = SE3_to_se3(se3_to_SE3(se3)) # rescale
+                np.save(vicon_file+'.npy', se3)
 
-                pose_t = se3_to_SE3(se3_t)[0:3,3]
-                #pose.append(np.expand_dims([log_time, posex, posey, posez, w[0], w[1], w[2]],0))
-                pose.append(np.expand_dims([ros_time, pose_t[0], pose_t[1],pose_t[2]],0))
+        ## 3. extract rgb-images from long taken video and align depth and vicon data
+        rgb_source_dir = demo_dir + '/rgb_raw'
+        depth_source_dir = demo_dir + '/depth_raw'
+     
+        rgb_target_dir = demo_dir + '/rgb'
+        depth_target_dir = demo_dir + '/depth'
 
-                original_pose_t = [posex, posey, posez]
-                original_pose.append(np.expand_dims(original_pose_t,0))
-            se3 = np.concatenate(se3, 0)
-            pose = np.concatenate(pose , 0)
-
-            original_pose = np.concatenate(original_pose,0)
-            np.save(output_path+'/'+object_name+'_pose.npy', se3)
-            np.savetxt(output_path+'/'+object_name+'_pose.txt', se3)
-            all_pose.append(pose)
+        util.create_dir(rgb_target_dir, clear = True)
+        util.create_dir(depth_target_dir, clear = True)
+        print(colored('please check %s and inform us where to cut'%(demo_dir),'green') )
+        begin = input(colored('where to begin? [enter number as type of nanoseconds]'))
+        end = input(colored('where to end? [enter number as type of nanoseconds]'))
+        begin = int(begin)
+        end = int(end)
         
+        ## extract rgb
+        rgb_time = []
+        for rgb_path in sorted(glob.glob(rgb_source_dir+'/*.npy')):
+            file_name = os.path.basename(rgb_path)
+            file_name_no_extension = os.path.splitext(file_name)[0]
+            time_index = int(file_name_no_extension)
+
+            if (time_index >= begin) and (time_index <=end):
+                source_file = rgb_source_dir+'/'+file_name_no_extension+'.npy'
+                target_file = rgb_target_dir+'/'+str(len(rgb_time)).zfill(10)+'.npy'
+                os.system('cp  %s %s'%(source_file, target_file))
+
+                source_file = rgb_source_dir+'/'+file_name_no_extension+'.png'
+                target_file = rgb_target_dir+'/'+str(len(rgb_time)).zfill(10)+'.png'
+                os.system('cp  %s %s'%(source_file, target_file))
+                rgb_time.append( int(time_index) )
+
+            if time_index >end:
+                break
+
+        ## align depth
+        depth_files = sorted(glob.glob(depth_source_dir+'/*.npy'))
+        indicator = 0
+        depth_time = []
+        for d1, d2 in zip(depth_files[:-1], depth_files[1:]):
+            d1_name = os.path.basename(d1)
+            d2_name = os.path.basename(d2)
+            d1_no_ext = os.path.splitext(d1_name)[0]
+            d2_no_ext = os.path.splitext(d2_name)[0]
+            
+            d1_time = int(d1_no_ext)
+            d2_time = int(d2_no_ext)
+
+            if d1_time <= rgb_time[indicator] <= d2_time:
+                if rgb_time[indicator] - d1_time <= d2_time- rgb_time[indicator]:
+                    copy_file_no_ext = d1_no_ext
+                else:
+                    copy_file_no_ext =  d2_no_ext
+
+                source_file = depth_source_dir+'/'+copy_file_no_ext+'.npy'
+                target_file = depth_target_dir+'/'+str(indicator).zfill(10)+'.npy'
+                os.system('cp  %s %s'%(source_file, target_file))
+
+                source_file = depth_source_dir+'/'+copy_file_no_ext+'.png'
+                target_file = depth_target_dir+'/'+str(indicator).zfill(10)+'.png'
+                os.system('cp  %s %s'%(source_file, target_file))
+                indicator += 1
+                depth_time.append(int(copy_file_no_ext))
+            else:
+                pass
+
+            if indicator >= len(rgb_time):
+                break
+
+        ## align vicon
+        for obj in object_names:
+            vicon_source_dir = demo_dir + '/vicon_raw/'+obj
+            vicon_target_dir = demo_dir + '/vicon/'+obj
+            util.create_dir(vicon_target_dir, clear = True)
+        
+            vicon_files = sorted(glob.glob(vicon_source_dir+'/*.npy'))
+            indicator = 0
+            vicon_time = []
+            for v1, v2 in zip(vicon_files[:-1], vicon_files[1:]):
+                v1_name = os.path.basename(v1)
+                v2_name = os.path.basename(v2)
+                v1_no_ext = os.path.splitext(v1_name)[0]
+                v2_no_ext = os.path.splitext(v2_name)[0]
+                
+                v1_time = int(v1_no_ext)
+                v2_time = int(v2_no_ext)
+
+                if rgb_time[indicator] <= v2_time:
+                    if rgb_time[indicator] - v1_time <= v2_time- rgb_time[indicator]:
+                        copy_file_no_ext = v1_no_ext
+                    else:
+                        copy_file_no_ext =  v2_no_ext
+
+                    source_file = vicon_source_dir+'/'+copy_file_no_ext+'.npy'
+                    target_file = vicon_target_dir+'/'+str(indicator).zfill(10)+'.npy'
+                    os.system('cp  %s %s'%(source_file, target_file))
+
+                    indicator += 1
+                    vicon_time.append(int(copy_file_no_ext))
+                    print('v1:',v1,'v2:',v2, 'rgb:',rgb_time[indicator-1], 'indicator',indicator)
+                else:
+                    pass
+
+                if indicator >= len(rgb_time):
+                    break
+                    
+        ## save image animation
+        config = util.load_yaml('./configure/'+task_name+'.yaml')
+        fps = config['animation']['fps']
+        img_dir = './data/'+task_name+'/'+demo_name+'/rgb'
+        video_path = './data/'+task_name+'/'+demo_name+'/image_trajectory.avi'
+        util.frame_to_video(img_dir, video_path,'png',fps=fps)()
+           
+        ## plot vicon trajectory
+        se3_dict = {}
+        for obj in object_names:
+            vicon_dir = './data/'+task_name+'/'+demo_name+'/vicon/'+obj
+            vicon_files = sorted(glob.glob(vicon_dir+'/*.npy'))
+            se3_dict[obj] = []
+            
+            for f in vicon_files:
+                se3 = np.load(f)
+                se3_dict[obj].append(np.expand_dims(se3,0))    
+            se3_dict[obj] = np.concatenate(se3_dict[obj],0)
+            data_len = se3_dict[obj].shape[0]
+    
+        output_dir = './data/'+task_name+'/'+demo_name+'/vicon_traj'
+        util.create_dir(output_dir, clear = True)
+
         fig = plt.figure()
-        ax = fig.add_subplot(111, projection = '3d')
-        nb_object = len(all_pose)
-        for pose in all_pose:
-            ax.plot(pose[:,1], pose[:,2], pose[:,3])
-        util.set_axes_equal(ax)
-        ax.set_xlabel('x(m)')
-        ax.set_ylabel('y(m)')
-        ax.set_zlabel('z(m)')
-        
-        plt.savefig(output_path+'/pose_path.png')
-        plt.close()
-        
-        ### align vicon with image save at './output/vicon/task_name/demo_name/clipped_objetname_pose.npy'
-        data_demo_dir = data_dir+'/'+demo 
-        vicon_demo_dir = output_dir + '/' + demo
-        cam_pos0 = np.load(data_demo_dir+'/camera_position0.npy', allow_pickle = True)
-        cam_pos1 = np.load(data_demo_dir+'/camera_position1.npy', allow_pickle = True)
-        cut_point = np.loadtxt(data_demo_dir+'/cut.txt')
+        ax = fig.add_subplot(111, projection='3d')
+        colors = ['r', 'g', 'b']
 
-        # open vicon
-        vicon_traj_list = []
-        obj_files = sorted(glob.glob(vicon_demo_dir+'/*.npy'))
-        assert len(obj_files) == 1
-        for obj_file in obj_files:
-            vicon_traj_loaded = np.load(obj_file, allow_pickle = True)
-            vicon_traj_list.append(vicon_traj_loaded)
-        # open cam time
-        cam_start_time = cam_pos0[0] 
-        cam_finish_time = cam_pos1[0]
-        # cut point
-        total_img = cut_point[0]
-        beginning_cut = cut_point[1]
-        endding_cut = cut_point[2]
-        # modify cam start time
-        play_time = cam_finish_time-cam_start_time
-        cam_start_time = cam_start_time+play_time*(beginning_cut/(total_img-1))
-        cam_finish_time = cam_finish_time - play_time*(endding_cut/(total_img-1))
-        ## open len vision
-        len_vision = int(total_img - beginning_cut - endding_cut)
-        try:
-            assert len(glob.glob(data_demo_dir+'/image/*.png')) == len_vision
-        except:
-            print('error of'+data_demo_dir)
-            print('number of image:'+str(len(glob.glob(data_demo_dir+'/image/*.png'))))
-            print('len_vision'+str(len_vision))
-            raise NotImplementedError
-        v_t = 1
-        for i in range(nb_object):
-            vicon_traj = vicon_traj_list[i]
-            vicon_time = vicon_traj[:,0]
+        se3_objects = {}
+        se3_traj = {}
+        obj_color = {}
+        for i, obj in enumerate(object_names):
+            se3_objects[obj] = vision.SE3object(angle_type = 'axis')
+            se3_traj[obj] = np.zeros([0,3])
+            obj_color[obj] = colors[i]
 
-            vicon_start_idx = 0
-            vicon_finish_idx = len(vicon_time)
-            for i in range(len(vicon_time)):
-                if vicon_time[i] < cam_start_time:
-                    vicon_start_idx = i
-                if vicon_time[i] < cam_finish_time:
-                    vicon_finish_idx = i
-            vicon_start_idx += 1
+        for t in range(data_len):
+            ax.clear()
+            for obj in object_names:
+                se3_object = se3_objects[obj]
+                
+                se3 = se3_dict[obj][t,:]
+                SE3 = se3_to_SE3(se3)
+                T = SE3[0:3,3]
+                se3_traj[obj] = np.concatenate([se3_traj[obj], np.expand_dims(T,0)],0)
+                
+                ax.plot(se3_traj[obj][:,0],se3_traj[obj][:,1],se3_traj[obj][:,2], 
+                        obj_color[obj], alpha = 0.5, linewidth = 4)
+                se3_object.apply_pose(se3)
+                se3_object.plot(ax, scale = 0.05, linewidth = 3) 
 
-            clipped_vicon_time = vicon_time[vicon_start_idx:vicon_finish_idx]
-            clipped_vicon = vicon_traj[vicon_start_idx:vicon_finish_idx, 1:7]
-            vision_time = np.arange(clipped_vicon_time[0], clipped_vicon_time[-1], (clipped_vicon_time[-1]-clipped_vicon_time[0])/len_vision)
+            util.set_axes_equal(ax)
+            #ax.axis('scaled')
+            ax.set_xlabel('x(m)')
+            ax.set_ylabel('y(m)')
+            ax.set_zlabel('z(m)')
+            ax.view_init(elev = -60, azim = -90)
+            fig.savefig(output_dir+'/%s.png'%str(t).zfill(10))
+        video_path = output_dir+'/object_trajectory.avi'
+        util.frame_to_video(output_dir, video_path, 'png', fps=fps)()
 
-            vicon_se3 = np.zeros((0,6))
-            for t in range(len_vision):
-                for tt in range(v_t-1, len(clipped_vicon_time)):
-                    if clipped_vicon_time[tt] > vision_time[t]:
-                        break
-                v_t = tt
-                vicon_se3  = np.concatenate([vicon_se3,  np.expand_dims(clipped_vicon[v_t,:],0) ], 0)
 
-        # need modifying for multiple object
-        vicon_se3_all_object = np.expand_dims(vicon_se3,1)
-        np.save(output_path+'/aligned.npy', vicon_se3_all_object)
-        
-        save_data = {'se3': vicon_se3_all_object[:,0,:], 'time': vision_time}
-        io.savemat(output_path+'/trajectories.mat', save_data)
+
+

@@ -37,14 +37,15 @@ class Intrinsic():
         pass
         
 class Zed_intrinsic(Intrinsic):
-    def __init__(self):
-        self.w = 672
-        self.h = 376
-        self.f = 336.11279
-        self.fx = self.f/self.w
-        self.fy = self.f/self.h
-        self.cx = (338.79229/self.w) 
-        self.cy = (196.26330/self.h)
+    def __init__(self, scale = 1.):
+        self.w = int(1280*scale)
+        self.h = int(720*scale)
+        self.f = 676.5778198
+        self.fx = (self.f/self.w)*scale
+        self.fy = (self.f/self.h)*scale
+        
+        self.cx = (647.502624511/self.w)*scale
+        self.cy = (377.535461425/self.h)*scale
 
 class Zed_mini_intrinsic(Intrinsic):
     def __init__(self, scale = 1.):
@@ -59,11 +60,55 @@ class Zed_mini_intrinsic(Intrinsic):
         
 
 ## vision algorithm
+def np_cloud_transformer(depth, camera = 'zed_mini', scale = 1.):
+    '''
+    depth: [h,w]
+
+    [(xi/w-cx)/fx,(yi/h-cy)/fy,1]
+    next just 
+    d*[(xi/w-cx)/fx,(yi/h-cy)/fy,1]
+        to get [Xi,Yi,Zi]    
+    '''
+    if camera == 'zed':
+        intrinsic = Zed_intrinsic(scale)
+    elif camera == 'zed_mini':
+        intrinsic = Zed_mini_intrinsic(scale)
+    output_dim = 3
+        
+    cx = intrinsic.cx
+    cy = intrinsic.cy
+    fx = intrinsic.fx
+    fy = intrinsic.fy
+    
+    height = depth.shape[0] #
+    width  = depth.shape[1] #
+    
+    x_linspace = np.linspace(-cx,1-cx, width) # image height, array x
+    y_linspace = np.linspace(-cy,1-cy, height) # imagw width, array y
+    
+    x_cord, y_cord = np.meshgrid(x_linspace, y_linspace)
+    x_cord = np.reshape(x_cord,[-1])
+    y_cord = np.reshape(y_cord,[-1])
+    f_= np.expand_dims(np.ones_like(x_cord) ,0)
+    
+    x_= np.expand_dims(np.divide(x_cord, fx) ,0)
+    y_= np.expand_dims(np.divide(y_cord, fy) ,0)
+    grid = np.concatenate([ x_, y_, f_],0)
+
+    depth = np.reshape(depth,[1,-1])
+    depth = np.tile(depth, [output_dim,1])
+    point_cloud = np.multiply(depth, grid)
+    point_cloud = np.reshape(point_cloud, [output_dim, height, width])
+    point_cloud = np.transpose(point_cloud, [1,2,0])
+    return point_cloud
+
+
+
 class Cloud_transformer():
-    def __init__(self, intrinsic='zed', scale=1., **kwargs):
+    def __init__(self, intrinsic='zed_mini', scale=1., **kwargs):
         ## set intrinsic 
         if intrinsic == 'zed':
-            self.intrinsic = Zed_intrinsic()
+            self.intrinsic = Zed_intrinsic(scale)
         elif intrinsic == 'zed_mini':
             self.intrinsic = Zed_mini_intrinsic(scale)
         ## initialize
@@ -327,10 +372,10 @@ class Image_warper_forward():
 
 
 class Optical_transformer():
-    def __init__(self, intrinsic='zed', scale = 1., mask_ch = 1, input_type = 'sined_euler', **kwargs):
+    def __init__(self, intrinsic='zed_mini', scale = 1., mask_ch = 1, input_type = 'sined_euler', **kwargs):
         ## set intrinsic 
         if intrinsic == 'zed':
-            self.intrinsic = Zed_intrinsic()
+            self.intrinsic = Zed_intrinsic(scale)
         elif intrinsic == 'zed_mini':
             self.intrinsic = Zed_mini_intrinsic(scale)
         ## initialize
@@ -348,7 +393,6 @@ class Optical_transformer():
         self.img_h=self.intrinsic.h
         self.mask_size = mask_ch
         self.input_type = input_type
-
         so3_a=np.array([
             [0,-1,0,1,0,0,0,0,0],
             [1,0,0,0,1,0,0,0,0],
@@ -535,7 +579,7 @@ class Smoother():
             return loss
 
 class SE3object():
-    def __init__(self, init_state, angle_type = 'euler'):
+    def __init__(self, init_state = [0,0,0,0,0,0], angle_type = 'euler'):
         '''
         init_state: numpy array shape with 12 
         init_state[0:3] : xyz  
@@ -637,7 +681,7 @@ class SE3object():
         ax.plot(zbar[0,:], zbar[1,:], zbar[2,:], color='b', linewidth = linewidth)
 
 
-def get_com(mask, depth, obj_idx, init_R = np.eye(3), scale = 0.5):
+def get_com(mask, depth, obj_idx, init_R = np.eye(3)):
     h = mask.shape[0]
     w = mask.shape[1]
 
@@ -657,11 +701,11 @@ def get_com(mask, depth, obj_idx, init_R = np.eye(3), scale = 0.5):
     column_cg = int(column_cg)
     #print('('+str(row_cg)+','+str(column_cg)+')' )
     
-    fo = 335.9676513671875
-    ho = 376 * scale
-    wo = 672 * scale
+    #fo = intrinsic.f
+    #ho = 376 * scale
+    #wo = 672 * scale
     
-    T = depth[row_cg,column_cg,:]/1000
+    T = depth[row_cg,column_cg,:]
     T[0] = T[0]#*(fo/wo)
     T[1] = T[1]#*(fo/ho)
     T[2] = T[2]

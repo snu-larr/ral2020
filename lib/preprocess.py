@@ -3,8 +3,8 @@ import IPython
 import numpy as np
 import scipy
 
-DEPTH_MIN = 50
-DEPTH_MAX = 20000
+DEPTH_MIN = 50/1000
+DEPTH_MAX = 20000/1000
 
 def preprocess_img(img, scale = 0.5):
     img = cv2.resize(img,None, fx=scale, fy = scale)
@@ -22,10 +22,10 @@ def preprocess_depth(depth, scale = 0.5):
     
     copyed[np.where(np.isnan(copyed))] = DEPTH_MIN
     copyed[np.where(np.isinf(copyed))] = DEPTH_MAX
-    copyed[np.where(copyed<DEPTH_MIN)] = DEPTH_MIN  
+    copyed[np.where(copyed<DEPTH_MIN)] = DEPTH_MIN
     copyed[np.where(copyed>DEPTH_MAX)] = DEPTH_MAX
 
-    copyed = copyed/1000
+    copyed = copyed#/1000
     return copyed, nan_mask
 
 def preprocess_mask(mask, scale = 0.5):
@@ -68,14 +68,14 @@ def preprocess_bbox(pc, mask, scale=0.5):
             y_sort = np.argsort(pc_masked[:,1])
             z_sort = np.argsort(pc_masked[:,2]) 
 
-            x_min = pc_masked[x_sort[min_pick],0]/1000 - 5e-2
-            x_max = pc_masked[x_sort[max_pick],0]/1000 + 5e-2
+            x_min = pc_masked[x_sort[min_pick],0] - 5e-2
+            x_max = pc_masked[x_sort[max_pick],0] + 5e-2
 
-            y_min = pc_masked[y_sort[min_pick],1]/1000 - 5e-2
-            y_max = pc_masked[y_sort[max_pick],1]/1000 + 5e-2
+            y_min = pc_masked[y_sort[min_pick],1] - 5e-2
+            y_max = pc_masked[y_sort[max_pick],1] + 5e-2
 
-            z_min = pc_masked[z_sort[min_pick],2]/1000
-            z_max = pc_masked[z_sort[max_pick],2]/1000 + 3e-1
+            z_min = pc_masked[z_sort[min_pick],2]
+            z_max = pc_masked[z_sort[max_pick],2] + 3e-1
 
             bbox.append(np.reshape([x_max, y_max, z_max, x_min, y_min, z_min], [1,6]))
     bbox = np.concatenate(bbox, 0)
