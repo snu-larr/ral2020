@@ -1,62 +1,50 @@
-## Prerequisite
-1. nvidia driver +CUDA 10.0 + CUDNN7.5
-2. zed, pyzed:\
- https://github.com/stereolabs/zed-python-api \
- https://www.stereolabs.com/developers \
-3. ros-melodic
-4. tensorflow-gpu
+# Code attachment for RAL/ICRA2020
+This code is an example of fully unsupervised training of objects 6d-pose in a scene.
 
-## Preliminaries
-### 1. Set-up vicon IP
-```
-gedit ./catkin_ws/vicon_bridge_launchvicon.launch
-edit datastream_hostport value as yout vicon IP address
-```
-### 2. Set-up vicon object
-vicon objects should be named same as defined in ./configure/[task_name]_objects.txt
+## Requirements:
+python3 >= 3.6.8 <br />
+<br />
+(below are python3 packages) <br />
+matplotlib >= 3.0.3 <br />
+numpy >= 1.16.2 <br />
+scipy >- 1.3.0 <br />
+tensorflow-gpu == 1.13.1 <br />
+tflearn >= 0.3.2 <br />
+
+## Dataset available:
 
 
-## Main
-### 0. Set-up project
+## Step1 : Training pose network
+The requirements for training the pose network are following:
+1) ./data/[task_name]/[demo_name]/ depth and rgb image
+2) ./output/segment/[task_name]/[demo_name] / segmentation mask
+3) ./configure/[task_name].yaml
+
+To train the pose network, please execute the code with python3:
 ```
-source ./setup.sh
+python3 ./main.py task1 pose 
+```
+If you have pre-trained weight in './weight/pose/[task_name]/', you can use the command:
+```
+Python3 ./main.py task1 pose -c
 ```
 
-### 1. Collect data  
-To watch the field of view of the camera, following code will show an rviz map of the camera.
-```
-python3 ./collect_data.py [task_name] [demo_name] --watch
-```
-
-If you want to record both vicon and vision, 
-```
-python3 ./collect_data.py [task_name] [demo_name] --vicon
-```
-
-If you want to record vision only
-```
-python3 ./collect_data.py [task_name] [demo_name]
-```
-
-!! Be sure all hardware collectly generates ros topics (/zed/zed_node/rgb, /vicon/k_xxx/k_xxx, ...)
-```
-rostopic list
-rostopic echo xxx
-```
-
-Check **"raw.bag.activate"** is generated in **"./data/[task_name]/[demo_name]"**.
-
-### 2. convert bag file to rgb/depth/vcion data
-```
-python3 ./read_bag.py [task_name]
-```
-Check **depth, rgb, vicon folders** are generated in **"./data/[task_name]/[demo_name]"**
+The log file wile be saved in './log/[task_name]/pose_train.txt' <br />
+The training figure will be saved in './figure/pose/[task_name]' <br />
+To stop the training, you need to press ctrl+c. Then, weight will be automatically saved
 
 
-### 3. make segment label
+## Step2 : Extracting the pose from the trained network
+To extract the trained pose from the network, you need to execute the network in a test mode.
 ```
-python3 ./make_segment_label.py [task_name] [demo_name]
+python3 ./main.py task1 pose -t
 ```
+The pose trajectory will be saved in  './output/pose/[task_name]/se3_pose.npy' 
 
-### 4.
-
+## Step3 : Visualizing the trained result
+To visualize the trained output, you need to exectue the visualizing code.
+```
+python3 ./main.py task1 read_pose
+```
+The pose trajectory will be plotted in './output/pose/read_pose/[task_name]'. <br />
+The pose projection on an imag will be plotted in './output/pose/read_pose2/[task_name]'.
