@@ -12,8 +12,8 @@ tensorflow-gpu == 1.13.1 <br />
 tflearn >= 0.3.2 <br />
 
 ## Dataset available:
-https://drive.google.com/drive/folders/1vLjtZ5F-90iEiidCS3EHYymBfYyUdstz?usp=sharing
-download data into './data/'
+https://drive.google.com/drive/folders/1vLjtZ5F-90iEiidCS3EHYymBfYyUdstz?usp=sharing <br />
+download data to './data/'
 
 ## Step1 : Training pose network
 The requirements for training the pose network are following:
