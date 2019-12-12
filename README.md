@@ -11,44 +11,59 @@ scipy >- 1.3.0 <br />
 tensorflow-gpu == 1.13.1 <br />
 tflearn >= 0.3.2 <br />
 
-## Download dataset: (Link will open after Dec.12)
-https://drive.google.com/drive/folders/1vLjtZ5F-90iEiidCS3EHYymBfYyUdstz?usp=sharing <br />
+## Download dataset: 
+https://drive.google.com/open?id=1vLjtZ5F-90iEiidCS3EHYymBfYyUdstz <br />
+1) download rgb-d dataset ('google_drive/data/[task_name]') and unzip in 'git_repository/ral2020/data/[task_name]' <br />
+2) downlaod semantic label ('google_drive/output/[task_name]' in google drive) and unzip in 'git_repository/ral2020/output/[task_name]' <br /> 
+(For example, [
 
-1) download rgb-d dataset ('./data/[task_name]' in google drive) and unzip in './data/[task_name]' <br />
-(For example, './data/moving-a-block') <br />
-
-2) downlaod semantic label ('./output/[task_name]' in google drive) and unzip in './output/[task_name]' <br /> 
-(For example, './output/moving-a-block') <br />
-
-
-## Step1 : Training pose network
-The requirements for training the pose network are following:
-1) ./data/[task_name]/[demo_name]/ depth and rgb image
-2) ./output/segment/[task_name]/[demo_name] / segmentation mask
-3) ./configure/[task_name].yaml
-
-To train the pose network, please execute the code with python3:
+## Step1: Traning segmentation network
+1) Execute python3 to train the segmentation network
 ```
-python3 ./main.py task1 pose 
+python3 ./main.py [task_name] segment --train
 ```
-If you have pre-trained weight in './weight/pose/[task_name]/', you can use the command:
+For example,
 ```
-Python3 ./main.py task1 pose -c
+python3 ./main.py stacking-a-block segment --train
 ```
 
-The log file wile be saved in './log/[task_name]/pose_train.txt' <br />
-The training figure will be saved in './figure/pose/[task_name]' <br />
-To stop the training, you need to press ctrl+c. Then, weight will be automatically saved
+2) After the network is converged, obtain the segmentation mask
+```
+python3 ./main.py [task_name] segment --train
+```
+For example,
+```
+python3 ./main.py stacking-a-block segment --test
+```
+
+## Step2: Traning pose network
+1) Execute python3 to train the pose network
+```
+python3 ./main.py [task_name] pose --train
+```
+For example,
+```
+python3 ./main.py stacking-a-block pose --train
+```
+
+2) After the network is converged, obtain the trained pose
+```
+python3 ./main.py [task_name] pose --train
+```
+For example,
+```
+python3 ./main.py stacking-a-block pose --test
+```
 
 
-## Step2 : Extracting the pose from the trained network
+## Step3 : Extracting the pose from the trained network
 To extract the trained pose from the network, you need to execute the network in a test mode.
 ```
 python3 ./main.py task1 pose -t
 ```
 The pose trajectory will be saved in  './output/pose/[task_name]/se3_pose.npy' 
 
-## Step3 : Visualizing the trained result
+## Step4 : Visualizing the trained result
 To visualize the trained output, you need to exectue the visualizing code.
 ```
 python3 ./main.py task1 read_pose
