@@ -1,4 +1,4 @@
-task_name: task5
+task_name: moving-a-block
 
 camera:
     camera: 'zed_mini'

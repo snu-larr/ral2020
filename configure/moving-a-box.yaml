@@ -1,4 +1,4 @@
-task_name: stacking-a-block
+task_name: moving-a-box
 
 camera:
     camera: 'zed_mini'
