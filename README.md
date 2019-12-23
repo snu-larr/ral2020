@@ -13,60 +13,42 @@ tflearn >= 0.3.2 <br />
 
 ## Download dataset: 
 https://drive.google.com/open?id=1vLjtZ5F-90iEiidCS3EHYymBfYyUdstz <br />
-1) download rgb-d dataset ('google_drive/data/[task_name]') and unzip in 'git_repository/ral2020/data/[task_name]' <br />
-2) downlaod semantic label ('google_drive/output/[task_name]' in google drive) and unzip in 'git_repository/ral2020/output/[task_name]' <br /> 
-(For example, [
+1) download rgb-d dataset **'google_drive/data/[task_name]'** and unzip in **'./data/[task_name]'** <br />
+2) downlaod semantic label **'google_drive/output/[task_name]'** and unzip in **'./output/[task_name]'** <br /> 
 
 ## Step1: Traning segmentation network
 1) Execute python3 to train the segmentation network
 ```
 python3 ./main.py [task_name] segment --train
 ```
-For example,
-```
-python3 ./main.py stacking-a-block segment --train
-```
+- Check a log and figures created: **./log/[task_name]/segment_train.txt**, **./figure/[task_name]/segment/**
 
-2) After the network is converged, obtain the segmentation mask
+2) After the training converged, obtain the segmentation mask
 ```
-python3 ./main.py [task_name] segment --train
+python3 ./main.py [task_name] segment --test
 ```
-For example,
-```
-python3 ./main.py stacking-a-block segment --test
-```
+- Check files created in **'./output/segment/[task_name]/'**
 
 ## Step2: Traning pose network
 1) Execute python3 to train the pose network
 ```
 python3 ./main.py [task_name] pose --train
 ```
-For example,
-```
-python3 ./main.py stacking-a-block pose --train
-```
+- Check a log and figures created: **./log/[task_name]/pose_train.txt**, **./figure/[task_name]/pose/**
 
-2) After the network is converged, obtain the trained pose
+2) After the network converged, obtain the trained pose
 ```
-python3 ./main.py [task_name] pose --train
+python3 ./main.py [task_name] pose --test
 ```
-For example,
-```
-python3 ./main.py stacking-a-block pose --test
-```
+- Check files created in **'./output/pose/[task_name]/'** 
 
 
-## Step3 : Extracting the pose from the trained network
-To extract the trained pose from the network, you need to execute the network in a test mode.
-```
-python3 ./main.py task1 pose -t
-```
-The pose trajectory will be saved in  './output/pose/[task_name]/se3_pose.npy' 
-
-## Step4 : Visualizing the trained result
+## Step3 : Visualizing the trained result
 To visualize the trained output, you need to exectue the visualizing code.
 ```
-python3 ./main.py task1 read_pose
+python3 ./main.py [task_name] read_pose
 ```
-The pose trajectory will be plotted in './output/pose/read_pose/[task_name]'. <br />
-The pose projection on an imag will be plotted in './output/pose/read_pose2/[task_name]'.
+The pose trajectory will be plotted in **'./output/pose/read_pose/[task_name]'**. <br />
+The pose projection on an imag will be plotted in **'./output/pose/read_pose2/[task_name]'**.
+
+
