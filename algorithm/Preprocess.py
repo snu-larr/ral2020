@@ -28,7 +28,8 @@ from mrcnn import visualize
 from mrcnn.visualize import display_images, apply_mask
 import mrcnn.model as modellib
 from mrcnn.model import log
-from samples.coco import coco
+#from samples.coco import coco
+from Mask_RCNN.samples.coco import coco
 
 from lib import util
 from lib.image import *

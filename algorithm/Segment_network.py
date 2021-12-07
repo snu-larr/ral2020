@@ -41,13 +41,13 @@ class Segnet_stream(Batch_stream):
                 self.mask_dict[demo] = sorted(glob.glob(demo_dir+'/mask/*.npy'))
                 self.depth_dict[demo] = []
 
-                img_s_list = sorted(glob.glob('./output/'+task_name+'/label/'+demo+'/labeled_img/*.png'))
+                img_s_list = sorted(glob.glob('./output/'+task_name+'/preprocess/'+demo+'/labeled_image/*.npy'))
                 for img_s in img_s_list:
                     filename = os.path.basename(img_s)
                     depth_s = './data/'+task_name+'/'+demo+'/depth/'+filename
                     depth_s = depth_s.replace('png','npy')
                     self.depth_dict[demo].append(depth_s)
-
+                    
         elif self.mode == 'test':
             self.data_dir = './data'+'/'+task_name
             self.demo_list = os.listdir(self.data_dir)
@@ -227,6 +227,7 @@ class Segment_network(Network):
                 feed_dict = {placeholders['img_ph'] : img_batch,
                              placeholders['depth_ph'] : depth_batch,
                              placeholders['mask_ph'] : mask_batch}
+
                 tensor_out, _  = sess.run([tensors, operations], feed_dict = feed_dict)
                 global_step +=1
                 one_cycle_loss += tensor_out['loss']

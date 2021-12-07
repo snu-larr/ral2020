@@ -164,8 +164,10 @@ def se3_to_SE3(xi):
         w_norm = np.sqrt( w[0]*w[0]+w[1]*w[1]+w[2]*w[2]) 
         new_w_norm = (w_norm*1e10)%(np.pi*1e10)/(1e10) 
         ######################################3
-        new_w = (new_w_norm/w_norm) * w  # w ############################################
-        
+        #new_w = (new_w_norm/w_norm) * w  # w ############################################
+        new_w = w
+
+
         w_hat = wedge(new_w)
         #R = scipy.linalg.expm(w_hat)
         w_norm = np.sqrt( new_w[0]*new_w[0]+new_w[1]*new_w[1]+new_w[2]*new_w[2])
@@ -187,7 +189,14 @@ def SE3_to_se3(SE3):
         ## (Warning!!) if theta = ||w||  > 3.1415; then algorithm fails
         ## R = I ==> theta = +-inf
         ############################################
-        thetha = (thetha*1e10)%(np.pi*1e10)/(1e10) 
+        '''
+        if thetha > np.pi:
+            thetha -= 2*np.pi
+        elif thetha < -np.pi:
+            thetha += 2*np.pi
+        '''
+        #assert thetha < np.pi
+        ################ thetha = (thetha*1e10)%(np.pi*1e10)/(1e10) 
         w = thetha * (1./(2.*np.sin(thetha)))*np.asarray([R[2,1] - R[1,2], R[0,2] - R[2,0], R[1,0] - R[0,1]])
         w_hat = wedge(w)
         v = np.matmul(np.eye(3) - (1/2 * (w_hat)) + (((1/(thetha * thetha)) * (1 - ((thetha * np.sin(thetha)) / (2*(1 - np.cos(thetha)))))) * np.matmul(w_hat, w_hat)),T)

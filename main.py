@@ -49,12 +49,13 @@ if __name__ == '__main__':
     
     elif module_name == 'pose':
         from algorithm.Pose_network import Pose_network
-        pose_net = Pose_network(config, mode = 'default')
         if TEST:
+            pose_net = Pose_network(config, mode = 'test')
             pose_net.batch_size = 1
             pose_net.build()
             pose_net.test()
         else:
+            pose_net = Pose_network(config, mode = 'train')
             pose_net.build()
             pose_net.train(continuous=CONTINUOUS)
 

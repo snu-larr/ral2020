@@ -12,6 +12,8 @@ from lib.math import *
 from lib import vision
 from lib import util
 
+ARROW_SCALE = 2.5
+
 def projection(T, intrinsic):
     w = intrinsic.w
     h = intrinsic.h
@@ -47,6 +49,8 @@ def read(config):
         intrinsic = vision.Zed_intrinsic(scale = scale)
     elif camera == 'zed_mini':
         intrinsic = vision.Zed_mini_intrinsic(scale = scale)
+    elif camera == 'unity':
+        intrinsic = vision.Unity_intrinsic(scale)
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -55,9 +59,10 @@ def read(config):
         output_path = output_dir+'/'+demo_name
         util.create_dir(output_path, clear = True)
         img_list = sorted(glob.glob(data_dir+'/'+demo_name+'/rgb/*.npy'))
-        
         depth_dir = './data/'+task_name+'/'+demo_name+'/depth'
-        mask_dir = './output/'+task_name+'/segment/'+demo_name
+        #mask_dir = './output/'+task_name+'/segment/'+demo_name
+        mask_dir = './data/'+task_name+'/'+demo_name+'/mask'
+        
         depth_files = sorted(glob.glob(depth_dir+'/*.npy'))
         mask_files = sorted(glob.glob(mask_dir+'/*.npy'))
         
@@ -94,7 +99,7 @@ def read(config):
 
                 se3 = SE3_to_se3(SE3)
                 obj.apply_pose(se3)
-                s = 0.1 *10
+                s = 0.1 * ARROW_SCALE
 
                 scaled_xbasis = 0.1*(obj.xbasis-obj.orientation)+obj.orientation
                 scaled_ybasis = 0.1*(obj.ybasis-obj.orientation)+obj.orientation

@@ -28,13 +28,19 @@ from lib.math import *
 from lib.preprocess import *
 from lib.learner import *
 
+
+## use true mask
+
+
 class Pose_stream(Batch_stream):
     def __init__(self, task_name, batch_size, camera = 'zed_mini', scale = 1, mode = 'train'):
         self.batch_size = batch_size
         self.mode = mode
         self.camera = camera
         self.img_dir = './data/'+task_name
-        self.mask_dir = './output/'+task_name+'/segment'
+        #self.mask_dir = './output/'+task_name+'/segment'
+        self.mask_dir = './data/'+task_name
+        
         self.preprocess_dir = './.preprocess/'+task_name
         self.scale = scale
 
@@ -59,9 +65,10 @@ class Pose_stream(Batch_stream):
             mask_demo_dir = self.mask_dir +'/'+demo
             self.img_dict[demo] = sorted(glob.glob(img_demo_dir+'/rgb/*.npy'))
             self.depth_dict[demo] = sorted(glob.glob(img_demo_dir+'/depth/*.npy'))
-            self.mask_dict[demo] = sorted(glob.glob(mask_demo_dir+'/*.npy'))
+            self.mask_dict[demo] = sorted(glob.glob(mask_demo_dir+'/mask/*.npy'))
             self.g_vr_dict[demo] = sorted(glob.glob(img_demo_dir+'/vicon/k_zed/*.npy'))
 
+        
         for demo in self.demo_list:
             img_list = self.img_dict[demo]
             depth_list = self.depth_dict[demo]
@@ -77,47 +84,48 @@ class Pose_stream(Batch_stream):
             preprocess_bbox_dir = preprocess_dir +'/bbox'
             preprocess_g_vr_dir = preprocess_dir + '/g_vr'
 
-            util.create_dir(preprocess_img_dir, clear = True)
-            util.create_dir(preprocess_depth_dir, clear = True)
-            util.create_dir(preprocess_nan_mask_dir, clear = True)
-            util.create_dir(preprocess_mask_dir, clear = True) 
-            util.create_dir(preprocess_mask_img_dir, clear = True) 
-            util.create_dir(preprocess_bbox_dir, clear = True) 
-            util.create_dir(preprocess_g_vr_dir, clear = True)
+            if mode == 'train':
+                util.create_dir(preprocess_img_dir, clear = True)
+                util.create_dir(preprocess_depth_dir, clear = True)
+                util.create_dir(preprocess_nan_mask_dir, clear = True)
+                util.create_dir(preprocess_mask_dir, clear = True) 
+                util.create_dir(preprocess_mask_img_dir, clear = True) 
+                util.create_dir(preprocess_bbox_dir, clear = True) 
+                util.create_dir(preprocess_g_vr_dir, clear = True)
+            
+                index = 0
+                total_len = len(img_list)
+                for img_path, depth_path, mask_path, g_vr_path in zip(img_list, depth_list, mask_list, g_vr_list):
+                    img_load = np.load(img_path)
+                    depth_load = np.load(depth_path)
+                    mask_load = np.load(mask_path)
+                    xi_vr_load = np.load(g_vr_path)
+                    
+                    img = preprocess_img(img_load, scale=scale)
+                    depth, nan_mask= preprocess_depth(depth_load, scale=scale)
+                    mask = preprocess_mask(mask_load, scale=1)
+                    
+                    pc = vision.np_cloud_transformer(depth, self.camera, scale = scale)
+                    bbox = preprocess_bbox(pc, mask_load, scale = scale)
+                    g_vr = se3_to_SE3(xi_vr_load)
+                    
+                    img = np.expand_dims(img, axis = 0)
+                    depth = np.expand_dims(depth, axis = 0)
+                    mask = np.expand_dims(mask, axis = 0)
+                    nan_mask = np.expand_dims(nan_mask, axis = 0)
+                    bbox = np.expand_dims(bbox, axis = 0)
+                    g_vr = np.expand_dims(g_vr,0)
 
-            index = 0
-            total_len = len(img_list)
-            for img_path, depth_path, mask_path, g_vr_path in zip(img_list, depth_list, mask_list, g_vr_list):
-                img_load = np.load(img_path)
-                depth_load = np.load(depth_path)
-                mask_load = np.load(mask_path)
-                xi_vr_load = np.load(g_vr_path)
-                
-                img = preprocess_img(img_load, scale=scale)
-                depth, nan_mask= preprocess_depth(depth_load, scale=scale)
-                mask = preprocess_mask(mask_load, scale=1)
-                
-                pc = vision.np_cloud_transformer(depth, self.camera, scale = scale)
-                bbox = preprocess_bbox(pc, mask_load, scale = scale)
-                g_vr = se3_to_SE3(xi_vr_load)
-                
-                img = np.expand_dims(img, axis = 0)
-                depth = np.expand_dims(depth, axis = 0)
-                mask = np.expand_dims(mask, axis = 0)
-                nan_mask = np.expand_dims(nan_mask, axis = 0)
-                bbox = np.expand_dims(bbox, axis = 0)
-                g_vr = np.expand_dims(g_vr,0)
+                    np.save(preprocess_img_dir+'/%04d.npy'%index, img)
+                    np.save(preprocess_depth_dir+'/%04d.npy'%index, depth)
+                    np.save(preprocess_nan_mask_dir+'/%04d.npy'%index, nan_mask)
+                    np.save(preprocess_mask_dir+'/%04d.npy'%index, mask)
+                    np.save(preprocess_bbox_dir+'/%04d.npy'%index, bbox)
+                    np.save(preprocess_g_vr_dir+'/%04d.npy'%index, g_vr)
 
-                np.save(preprocess_img_dir+'/%04d.npy'%index, img)
-                np.save(preprocess_depth_dir+'/%04d.npy'%index, depth)
-                np.save(preprocess_nan_mask_dir+'/%04d.npy'%index, nan_mask)
-                np.save(preprocess_mask_dir+'/%04d.npy'%index, mask)
-                np.save(preprocess_bbox_dir+'/%04d.npy'%index, bbox)
-                np.save(preprocess_g_vr_dir+'/%04d.npy'%index, g_vr)
-
-                mask_img = multichannel_to_image(mask[0,:])
-                np.save(preprocess_mask_img_dir+'/%s.png'%str(index).zfill(10), mask_img)
-                index+=1
+                    mask_img = multichannel_to_image(mask[0,:])
+                    np.save(preprocess_mask_img_dir+'/%s.png'%str(index).zfill(10), mask_img)
+                    index+=1
 
             self.img_preprocess_dict[demo] = sorted(glob.glob(preprocess_img_dir+'/*.npy'))
             self.depth_preprocess_dict[demo] = sorted(glob.glob(preprocess_depth_dir+'/*.npy'))
@@ -126,10 +134,16 @@ class Pose_stream(Batch_stream):
             self.bbox_preprocess_dict[demo] = sorted(glob.glob(preprocess_bbox_dir+'/*.npy'))
             self.g_vr_preprocess_dict[demo] = sorted(glob.glob(preprocess_g_vr_dir+'/*.npy'))
             self.num_data += len(self.img_dict[demo])
-        
+    
     def iterator(self, batch_size):
         self._count = 0
 
+        img0_list = []; depth0_list = []; nan_mask0_list = []; mask0_list = []; bbox0_list = []; 
+        img1_list = []; depth1_list = []; nan_mask1_list = []; mask1_list = []; bbox1_list = [];  
+        g_vr0_list = []; g_vr1_list = []; g_vr2_list = []
+        demo_iterator_list = []
+
+        data_len = 0
         for demo in self.demo_list:
             img_list = self.img_preprocess_dict[demo]
             depth_list = self.depth_preprocess_dict[demo]
@@ -138,59 +152,68 @@ class Pose_stream(Batch_stream):
             bbox_list = self.bbox_preprocess_dict[demo]
             g_vr_list = self.g_vr_preprocess_dict[demo]
 
-            img0_list = img_list[0:-2]
-            img1_list = img_list[1:-1]
-            depth0_list = depth_list[0:-2]
-            depth1_list = depth_list[1:-1]
-            nan_mask0_list = nan_mask_list[0:-2]
-            nan_mask1_list = nan_mask_list[1:-1]
-            mask0_list = mask_list[0:-2]
-            mask1_list = mask_list[1:-1]
-            bbox0_list = bbox_list[0:-2]
-            bbox1_list = bbox_list[1:-1]
-            g_vr0_list = g_vr_list[0:-2]
-            g_vr1_list = g_vr_list[1:-1] 
-            g_vr2_list = g_vr_list[2:]
-            data_len = len(img0_list)
-                
-            idx = np.arange(data_len)
-            if self.mode == 'train':
-                random.shuffle(idx)
-            elif self.mode == 'test':
-                pass
+            img_list = self.img_preprocess_dict[demo]
+            depth_list = self.depth_preprocess_dict[demo]
+            nan_mask_list = self.nan_mask_preprocess_dict[demo]
+            mask_list = self.mask_preprocess_dict[demo]
+            bbox_list = self.bbox_preprocess_dict[demo]
+            g_vr_list = self.g_vr_preprocess_dict[demo]
 
-            for i in idx:
-                img0_path = img0_list[i]
-                img1_path = img1_list[i]
-                depth0_path = depth0_list[i]
-                depth1_path = depth1_list[i]
-                nan_mask0_path = nan_mask0_list[i]
-                nan_mask1_path = nan_mask1_list[i]
-                mask0_path = mask0_list[i]
-                mask1_path = mask1_list[i]
-                bbox0_path = bbox0_list[i]
-                bbox1_path = bbox1_list[i]
-                g_vr0_path = g_vr0_list[i]
-                g_vr1_path = g_vr1_list[i]
-                g_vr2_path = g_vr2_list[i]
+            img0_list += img_list[0:-2]
+            img1_list += img_list[1:-1]
+            depth0_list += depth_list[0:-2]
+            depth1_list += depth_list[1:-1]
+            nan_mask0_list += nan_mask_list[0:-2]
+            nan_mask1_list += nan_mask_list[1:-1]
+            mask0_list += mask_list[0:-2]
+            mask1_list += mask_list[1:-1]
+            bbox0_list += bbox_list[0:-2]
+            bbox1_list += bbox_list[1:-1]
+            g_vr0_list += g_vr_list[0:-2]
+            g_vr1_list += g_vr_list[1:-1] 
+            g_vr2_list += g_vr_list[2:]
+            demo_iterator_list += [demo]*len(img_list[0:-2])
+            
+        data_len = len(img0_list)
+        idx = np.arange(data_len)
+        if self.mode == 'train':
+            random.shuffle(idx)
+        elif self.mode == 'test':
+            pass
+        
+        for i in idx:
+            img0_path = img0_list[i]
+            img1_path = img1_list[i]
+            depth0_path = depth0_list[i]
+            depth1_path = depth1_list[i]
+            nan_mask0_path = nan_mask0_list[i]
+            nan_mask1_path = nan_mask1_list[i]
+            mask0_path = mask0_list[i]
+            mask1_path = mask1_list[i]
+            bbox0_path = bbox0_list[i]
+            bbox1_path = bbox1_list[i]
+            g_vr0_path = g_vr0_list[i]
+            g_vr1_path = g_vr1_list[i]
+            g_vr2_path = g_vr2_list[i]
 
-                img0 = np.load(img0_path)
-                img1 = np.load(img1_path)
-                depth0 = np.load(depth0_path)
-                depth1 = np.load(depth1_path)
-                nan_mask0 = np.load(nan_mask0_path)
-                nan_mask1 = np.load(nan_mask1_path)
-                mask0 = np.load(mask0_path)
-                mask1 = np.load(mask1_path)
-                bbox0 = np.load(bbox0_path)
-                bbox1 = np.load(bbox1_path)
-                g_vr0 = np.load(g_vr0_path)
-                g_vr1 = np.load(g_vr1_path)
-                self._count +=1
-                yield img0, img1, depth0, depth1, \
-                        mask0, mask1, nan_mask0, nan_mask1, \
-                        g_vr0, g_vr1, \
-                        bbox0, bbox1 , demo
+            img0 = np.load(img0_path)
+            img1 = np.load(img1_path)
+            depth0 = np.load(depth0_path)
+            depth1 = np.load(depth1_path)
+            nan_mask0 = np.load(nan_mask0_path)
+            nan_mask1 = np.load(nan_mask1_path)
+            mask0 = np.load(mask0_path)
+            mask1 = np.load(mask1_path)
+            bbox0 = np.load(bbox0_path)
+            bbox1 = np.load(bbox1_path)
+            g_vr0 = np.load(g_vr0_path)
+            g_vr1 = np.load(g_vr1_path)
+            demo = demo_iterator_list[i]
+            self._count +=1
+            yield img0, img1, depth0, depth1, \
+                    mask0, mask1, nan_mask0, nan_mask1, \
+                    g_vr0, g_vr1, \
+                    bbox0, bbox1 , demo
             
 class Pose_network(Network):
     def __init__(self, config, mode='default'):
@@ -332,7 +355,10 @@ class Pose_network(Network):
         scale = self.scale
         hope = 1e-10 # epsilon value for preventing machine zero
 
-        self.sess = tf.Session()
+        config = tf.ConfigProto(allow_soft_placement=True)
+        config.gpu_options.allow_growth=True
+        self.sess = tf.Session(config = config)
+        
         with tf.variable_scope('pose'):
             frame0_ph = tf.placeholder(dtype = tf.float32, shape=(None, img_size[0], img_size[1], 3))
             frame1_ph = tf.placeholder(dtype = tf.float32, shape=(None, img_size[0], img_size[1], 3))
@@ -359,21 +385,20 @@ class Pose_network(Network):
             depth1_normalized_ = self.normalize_depth(depth1_ph)
             depth1_rgb_concat_ = tf.concat([tf.expand_dims(depth1_normalized_, axis = 3), frame1_ph], axis = 3)
             
-            if self.mode == 'default':
-                unet0_logit_, unet0_sigmoid_, embed0_ = network.u_net(depth0_rgb_concat_, output_ch = 4, trainable = True)
-                unet1_logit_, unet1_sigmoid_, embed1_ = network.u_net(depth1_rgb_concat_, output_ch = 4, reuse = True, trainable = True)
-            elif self.mode == 'fine':
-                unet0_logit_, unet0_sigmoid_, embed0_ = network.u_net(depth0_rgb_concat_, output_ch = 4, trainable = False)
-                unet1_logit_, unet1_sigmoid_, embed1_ = network.u_net(depth1_rgb_concat_, output_ch = 4, reuse = True, trainable = False)
-            
-            rgb0_sigmoid_ = unet0_sigmoid_[:,:,:,1:4]
-            rgb1_sigmoid_ = unet1_sigmoid_[:,:,:,1:4]
-            depth0_sigmoid_ = tf.expand_dims(unet0_sigmoid_[:,:,:,0],3)
-            depth1_sigmoid_ = tf.expand_dims(unet1_sigmoid_[:,:,:,0],3)
-            recovered_depth0_ = self.unnormalize_depth(depth0_sigmoid_)[:,:,:,0] 
-            recovered_depth1_ = self.unnormalize_depth(depth1_sigmoid_)[:,:,:,0] 
-            full_depth0_ = tf.multiply(nan0_ph, recovered_depth0_) + tf.multiply(1-nan0_ph, depth0_ph)
-            full_depth1_ = tf.multiply(nan1_ph, recovered_depth1_) + tf.multiply(1-nan1_ph, depth1_ph)
+            if self.mode == 'fine':
+                embed0_ = network.u_net(depth0_rgb_concat_, output_ch = 4, trainable = False)
+                embed1_ = network.u_net(depth1_rgb_concat_, output_ch = 4, reuse = True, trainable = False)
+            else:                
+                embed0_ = network.u_net(depth0_rgb_concat_, output_ch = 4, trainable = True)
+                embed1_ = network.u_net(depth1_rgb_concat_, output_ch = 4, reuse = True, trainable = True)
+            #depth0_sigmoid_ = tf.expand_dims(unet0_sigmoid_[:,:,:,0],3)
+            #depth1_sigmoid_ = tf.expand_dims(unet1_sigmoid_[:,:,:,0],3)
+            #recovered_depth0_ = self.unnormalize_depth(depth0_sigmoid_)[:,:,:,0] 
+            #recovered_depth1_ = self.unnormalize_depth(depth1_sigmoid_)[:,:,:,0] 
+            #full_depth0_ = tf.multiply(nan0_ph, recovered_depth0_) + tf.multiply(1-nan0_ph, depth0_ph)
+            #full_depth1_ = tf.multiply(nan1_ph, recovered_depth1_) + tf.multiply(1-nan1_ph, depth1_ph)
+            full_depth0_ = depth0_ph
+            full_depth1_ = depth1_ph
             
             ## add background
             mask0_ = tf.concat( [tf.zeros_like(tf.expand_dims(mask0_ph[:,:,:,0],3)), mask0_ph], 3)
@@ -392,15 +417,17 @@ class Pose_network(Network):
             # g_vr * g_rc = g_vc
             # g_vc * g_co1 = g_vo1
             # g_c2c1 = g_vc^-1 * g_vo2 * g_vo1^-1 * g_cv^-1
-            se3_rc_ = tf.Variable( np.asarray([[0.333653152, -0.19545771, -0.41434446, -0.16426212, 0.4854613, -0.28981152]],dtype = np.float32), trainable = True) # camera to vicon
-            se3_rc_ = tf.tile(se3_rc_, [batch_size, 1])
-            g_rc_ = tf_se3_to_SE3(se3_rc_)
-            g_vc1_ = tf.matmul(g_vr0_ph, g_rc_)
-            g_vc2_ = tf.matmul(g_vr1_ph, g_rc_)  
+            #se3_rc_ = tf.Variable( np.asarray([[0.333653152, -0.19545771, -0.41434446, -0.16426212, 0.4854613, -0.28981152]],dtype = np.float32), trainable = True) # camera to vicon
+            #se3_rc_ = tf.tile(se3_rc_, [batch_size, 1])
+            #g_rc_ = tf_se3_to_SE3(se3_rc_)
+            #g_vc1_ = tf.matmul(g_vr0_ph, g_rc_)
+            #g_vc2_ = tf.matmul(g_vr1_ph, g_rc_)  
+            
+            g_vc1_ = g_vr0_ph
+            g_vc2_ = g_vr1_ph            
             g_vc1_ = tf.reshape(g_vc1_, [-1,1,4,4]) # assert object num = 1
             g_vc2_ = tf.reshape(g_vc2_, [-1,1,4,4])        
             
-    
             G_SE3_inv_ = tf.reshape(tf_inv_SE3(tf.reshape(G_SE3_,[-1,4,4])),[-1, mask_ch,4,4])
 
             f_obj_t_ = G_SE3_[:,:,0:3,3]
@@ -441,11 +468,11 @@ class Pose_network(Network):
             f_pc_loss_ , motioned_pc0_ = self.get_pc_loss(pc0_,f_motion_map_, pc1_warped_, mask0_[:,:,:,1:], depth_only = True)
             b_pc_loss_, motioned_pc1_ = self.get_pc_loss(pc1_,b_motion_map_, pc0_warped_, mask1_[:,:,:,1:], depth_only = True)
             # (3) rgb recon loss
-            rgb_recover_loss0_ = self.get_RGB_recover_loss(rgb0_sigmoid_,frame0_ph)
-            rgb_recover_loss1_ = self.get_RGB_recover_loss(rgb1_sigmoid_,frame1_ph)
+            #rgb_recover_loss0_ = self.get_RGB_recover_loss(rgb0_sigmoid_,frame0_ph)
+            #rgb_recover_loss1_ = self.get_RGB_recover_loss(rgb1_sigmoid_,frame1_ph)
             # (4) dept recover loss
-            depth_recover_loss0_ = self.get_depth_recover_loss(depth0_ph, recovered_depth0_, nan0_ph)
-            depth_recover_loss1_ = self.get_depth_recover_loss(depth1_ph, recovered_depth1_, nan1_ph)  
+            #depth_recover_loss0_ = self.get_depth_recover_loss(depth0_ph, recovered_depth0_, nan0_ph)
+            #depth_recover_loss1_ = self.get_depth_recover_loss(depth1_ph, recovered_depth1_, nan1_ph)  
             # (5) volume loss     
             volume_loss0_ = self.get_volume_loss(bbox0_ph, se3_0_)
             volume_loss1_ = self.get_volume_loss(bbox1_ph, se3_1_)
@@ -453,19 +480,28 @@ class Pose_network(Network):
             ## sum loss
             photometric_loss_ = f_photometric_loss_+b_photometric_loss_
             pc_loss_ = f_pc_loss_ + b_pc_loss_   
-            rgb_recover_loss_ = rgb_recover_loss0_+rgb_recover_loss1_
-            depth_recover_loss_ = depth_recover_loss0_ + depth_recover_loss1_   
+            #rgb_recover_loss_ = rgb_recover_loss0_+rgb_recover_loss1_
+            #depth_recover_loss_ = depth_recover_loss0_ + depth_recover_loss1_   
             volume_loss_ = volume_loss0_ + volume_loss1_
 
             ## constants
+            '''
             self._p = 1e1   
             self._pc = 1e-1  
             self._d = 1e-2    
             self._recon = 1e-2 
             self._v = 1e1 
-
             loss_ =  self._p*photometric_loss_ + self._pc*pc_loss_ + self._recon*rgb_recover_loss_\
                         + self._d*depth_recover_loss_ +self._v*volume_loss_  
+            '''
+
+            self._p = 1e1   
+            self._pc = 1e-1  
+            self._d = 0  
+            self._recon = 0
+            self._v = 0 #1e1 
+            loss_ =  self._p*photometric_loss_ + self._pc*pc_loss_ +self._v*volume_loss_  
+
             train_op = tf.train.AdamOptimizer(learning_rate = learning_rate, beta1 = 0.9, beta2 = 0.99).minimize(loss_)
 
         self.placeholders = {}
@@ -484,15 +520,15 @@ class Pose_network(Network):
 
         self.tensors = {}
         self.tensors.update(self.placeholders)
-        self.tensors['recovered_depth0'] = recovered_depth0_
-        self.tensors['recovered_depth1'] = recovered_depth1_
+        #self.tensors['recovered_depth0'] = recovered_depth0_
+        #self.tensors['recovered_depth1'] = recovered_depth1_
         self.tensors['full_depth0'] = full_depth0_
         self.tensors['full_depth1'] = full_depth1_
         self.tensors['point_cloud0'] = point_cloud0_
         self.tensors['point_cloud1'] = point_cloud1_
         self.tensors['embed0'] = embed0_
         self.tensors['embed1'] = embed1_
-        self.tensors['se3_rc'] = se3_rc_
+        #self.tensors['se3_rc'] = se3_rc_
         self.tensors['se3_0'] = se3_0_
         self.tensors['se3_1'] = se3_1_
         self.tensors['mask0'] = mask0_
@@ -509,9 +545,9 @@ class Pose_network(Network):
         self.tensors['pc1_warped'] = pc1_warped_
         self.tensors['motioned_pc0'] = motioned_pc0_
         self.tensors['photometric_loss'] = photometric_loss_
-        self.tensors['depth_recover_loss'] = depth_recover_loss_
+        #self.tensors['depth_recover_loss'] = depth_recover_loss_
         self.tensors['pc_loss'] = pc_loss_
-        self.tensors['rgb_recover_loss'] = rgb_recover_loss_
+        #self.tensors['rgb_recover_loss'] = rgb_recover_loss_
         self.tensors['volume_loss'] = volume_loss_
         self.tensors['loss'] = loss_
         
@@ -536,6 +572,7 @@ class Pose_network(Network):
         saver.restore(sess, self.weight_dir+'/u_net.ckpt')
         pose_stream = Pose_stream(task_name, batch_size, camera = self.camera, scale = scale, mode = 'test')
         demo_list = pose_stream.demo_list
+
         batch_iter = pose_stream.iterator(batch_size = batch_size)
         writer = Writer(task_name, self.network_name+'_test')
 
@@ -554,6 +591,7 @@ class Pose_network(Network):
         one_cycle_volume = 0
 
         se3_dict = {}
+
         while True:
             try:
                 frame0_batch, frame1_batch, \
@@ -563,6 +601,8 @@ class Pose_network(Network):
                     g_vr0_batch, g_vr1_batch, \
                     bbox0_batch, bbox1_batch, \
                     demo_name = next(batch_iter)
+                
+                print(demo_name)
                 count = pose_stream._count
             except StopIteration:
                 break
@@ -585,8 +625,8 @@ class Pose_network(Network):
             one_cycle_loss += tensor_out['loss']
             one_cycle_photo += tensor_out['photometric_loss']
             one_cycle_pc += tensor_out['pc_loss']
-            one_cycle_depth += tensor_out['depth_recover_loss']
-            one_cycle_rgb += tensor_out['rgb_recover_loss']
+            #one_cycle_depth += tensor_out['depth_recover_loss']
+            #one_cycle_rgb += tensor_out['rgb_recover_loss']
             one_cycle_volume += tensor_out['volume_loss']
             if saveFigure:
                 self.subplot_depth(tensor_out, self.output_dir+'/'+demo_name+'/depth/%s.png'%str(count-1).zfill(10))
@@ -643,8 +683,8 @@ class Pose_network(Network):
         one_cycle_loss = 0
         one_cycle_photo = 0
         one_cycle_pc = 0
-        one_cycle_depth = 0
-        one_cycle_rgb = 0
+        #one_cycle_depth = 0
+        #one_cycle_rgb = 0
         one_cycle_volume = 0
 
         one_cycle_time = time.time()
@@ -703,12 +743,13 @@ class Pose_network(Network):
                     ##
                     one_cycle_train = pose_stream._count
                     duration = time.time()-one_cycle_time
-                    log_string = '%d \t %.2f \t l: %.10f \t p: %.10f \t pc: %.10f \t d: %.10f rgb: %.10f window: %.10f \n'\
+                    log_string = '%d \t %.2f \t l: %.10f \t p: %.10f \t pc: %.10f \t window: %.10f \n'\
                             %(global_step, duration, 
                                 one_cycle_loss/one_cycle_train, one_cycle_photo/one_cycle_train,
                                 one_cycle_pc/one_cycle_train, 
-                                one_cycle_depth/one_cycle_train,
-                                one_cycle_rgb/one_cycle_train, one_cycle_volume/one_cycle_train)
+                                #one_cycle_depth/one_cycle_train,
+                                #one_cycle_rgb/one_cycle_train, 
+                                one_cycle_volume/one_cycle_train)
                     #log_string = str(global_step)+ '\t' + str(one_cycle_loss/one_cycle_train) + '\n'
                     writer.write(log_string)
                     
@@ -719,9 +760,9 @@ class Pose_network(Network):
                     else:
                         print(log_string)
 
-                    if global_step % (int(10000/num_data)+1) == 0 and global_step != 0:
+                    if True: #global_step % (int(10000/num_data)+1) == 0 and global_step != 0:
                         saver.save(sess, self.weight_dir+'/u_net.ckpt')
-                    if global_step % (int(1000/num_data)+1) == 0:
+                    if True: #global_step % (int(1000/num_data)+1) == 0:
                         self.subplot_depth(tensor_out, self.figure_dir+'/depth/%s.png'%str(global_step).zfill(10))
                         self.subplot_warpedImg(tensor_out, self.figure_dir+'/warped_img/%s.png'%str(global_step).zfill(10))
                         
@@ -755,8 +796,8 @@ class Pose_network(Network):
                 one_cycle_loss += tensor_out['loss']
                 one_cycle_photo += self._p*tensor_out['photometric_loss']
                 one_cycle_pc += self._pc*tensor_out['pc_loss']
-                one_cycle_depth += self._d*tensor_out['depth_recover_loss']
-                one_cycle_rgb += self._recon*tensor_out['rgb_recover_loss']
+                #one_cycle_depth += self._d*tensor_out['depth_recover_loss']
+                #one_cycle_rgb += self._recon*tensor_out['rgb_recover_loss']
                 one_cycle_volume += self._v*tensor_out['volume_loss']
                 
             except:
@@ -786,7 +827,7 @@ class Pose_network(Network):
             file_path = self.figure_dir+'/depth.png'
 
         depth0 = tensor_out['depth0_ph'][0,:,:]
-        recovered_depth = tensor_out['recovered_depth0'][0,:]
+        #recovered_depth = tensor_out['recovered_depth0'][0,:]
         full_depth = tensor_out['full_depth0'][0,:]
         nan_mask = tensor_out['nan0_ph'][0,:]
         depth_diff = np.abs(full_depth - depth0)
@@ -798,7 +839,7 @@ class Pose_network(Network):
         plt.axis('off')
         plt.title('sensor depth', fontsize=20)
         plt.subplot(3,2,2)
-        plt.imshow(self.normalize_depth(recovered_depth), cmap ='gray')
+        #plt.imshow(self.normalize_depth(recovered_depth), cmap ='gray')
         plt.axis('off')
         plt.title('recovered depth', fontsize=20)
         plt.subplot(3,2,3)

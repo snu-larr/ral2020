@@ -76,15 +76,15 @@ def conv_deconv(img, trainable = True, net = {}):
 
     net['embedding'] = conv(net['h51'],filters=1024,kernel_size=3,strides=1, trainable = trainable, batch_norm = True)
     
-    net['d5']   = deconv(net['embedding'],filters=512,kernel_size=3,strides=2, output_shape = net['h50'].shape, trainable = True)
-    net['d4_i'] = merge([net['d5'], net['h50']], mode= 'concat', axis = -1)
-    net['d4']   = deconv(net['d4_i'], filters=256, kernel_size=3, strides=2, output_shape = net['h40'].shape, trainable = True)
-    net['d3_i'] = merge([net['d4'], net['h40']], mode= 'concat', axis = -1 )
-    net['d3']   = deconv(net['d3_i'], filters=128, kernel_size=3, strides=2, output_shape = net['h30'].shape, trainable = True)
-    net['d2_i'] = merge([net['d3'], net['h30']], mode= 'concat', axis = -1)
-    net['d2']   = deconv(net['d2_i'], filters=64, kernel_size=3, strides=2, output_shape = net['h20'].shape, trainable = True)
-    net['d1_i'] = merge([net['d2'], net['h20']], mode= 'concat', axis = -1)
-    net['out']  = deconv(net['d1_i'], filters=32, kernel_size=3, strides=2, trainable = True)  
+    #net['d5']   = deconv(net['embedding'],filters=512,kernel_size=3,strides=2, output_shape = net['h50'].shape, trainable = True)
+    #net['d4_i'] = merge([net['d5'], net['h50']], mode= 'concat', axis = -1)
+    #net['d4']   = deconv(net['d4_i'], filters=256, kernel_size=3, strides=2, output_shape = net['h40'].shape, trainable = True)
+    #net['d3_i'] = merge([net['d4'], net['h40']], mode= 'concat', axis = -1 )
+    #net['d3']   = deconv(net['d3_i'], filters=128, kernel_size=3, strides=2, output_shape = net['h30'].shape, trainable = True)
+    #net['d2_i'] = merge([net['d3'], net['h30']], mode= 'concat', axis = -1)
+    #net['d2']   = deconv(net['d2_i'], filters=64, kernel_size=3, strides=2, output_shape = net['h20'].shape, trainable = True)
+    #net['d1_i'] = merge([net['d2'], net['h20']], mode= 'concat', axis = -1)
+    #net['out']  = deconv(net['d1_i'], filters=32, kernel_size=3, strides=2, trainable = True)  
     return net
 
 """
@@ -95,12 +95,12 @@ def u_net(frame, output_ch, scope_name = 'u_net', trainable = True, reuse = Fals
     with tf.variable_scope(scope_name, reuse = reuse):
         init = tflearn.initializations.truncated_normal(shape=None, mean=0.0, stddev=0.01, dtype=tf.float32, seed=None)
         conv_deconv_output = conv_deconv(frame, trainable = trainable)
-        out = conv_deconv_output['out']
+        #out = conv_deconv_output['out']
         embed = conv_deconv_output['embedding']
-        mask_logit = conv_2d(out, nb_filter = output_ch, filter_size = 1, strides = 1, padding = 'same', weights_init = init, trainable = trainable) 
+        #mask_logit = conv_2d(out, nb_filter = output_ch, filter_size = 1, strides = 1, padding = 'same', weights_init = init, trainable = trainable) 
         #obj_mask = tf.nn.sigmoid(obj_mask) # -> why using 'tanh', 'sigmoid' do not make all values go zero?
-        mask_sigmoid = tf.nn.sigmoid(mask_logit)
-        return mask_logit, mask_sigmoid, embed
+        #mask_sigmoid = tf.nn.sigmoid(mask_logit)
+        return embed #mask_logit, mask_sigmoid, embed
 
 def pose_net(embed, mask_ch, scope_name ='pose_net', reuse = False):
     with tf.variable_scope(scope_name, reuse = reuse):

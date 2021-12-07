@@ -3,8 +3,8 @@ import IPython
 import numpy as np
 import scipy
 
-DEPTH_MIN = 50/1000
-DEPTH_MAX = 20000/1000
+DEPTH_MIN =  0.1 #50/1000
+DEPTH_MAX =  15 #20000/1000
 
 def preprocess_img(img, scale = 0.5):
     img = cv2.resize(img,None, fx=scale, fy = scale)

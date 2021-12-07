@@ -57,7 +57,18 @@ class Zed_mini_intrinsic(Intrinsic):
         
         self.cx = (322.11163330078125/self.w)*scale
         self.cy = (200.56185913085938/self.h)*scale
+
+class Unity_intrinsic(Intrinsic):
+    def __init__(self, scale = 1.):
+        self.w = int(672*scale)
+        self.h = int(376*scale)
+        self.f = 335.9676513671875 #332.6258
+        self.fx = (self.f/self.w)*scale
+        self.fy = (self.f/self.h)*scale
         
+        self.cx = 0.5 #(322.11163330078125/self.w)*scale
+        self.cy = 0.5 #(200.56185913085938/self.h)*scale
+
 
 ## vision algorithm
 def np_cloud_transformer(depth, camera = 'zed_mini', scale = 1.):
@@ -73,6 +84,8 @@ def np_cloud_transformer(depth, camera = 'zed_mini', scale = 1.):
         intrinsic = Zed_intrinsic(scale)
     elif camera == 'zed_mini':
         intrinsic = Zed_mini_intrinsic(scale)
+    elif camera == 'unity':
+        intrinsic = Unity_intrinsic(scale)
     output_dim = 3
         
     cx = intrinsic.cx
@@ -111,6 +124,8 @@ class Cloud_transformer():
             self.intrinsic = Zed_intrinsic(scale)
         elif intrinsic == 'zed_mini':
             self.intrinsic = Zed_mini_intrinsic(scale)
+        elif intrinsic == 'unity':
+            self.intrinsic = Unity_intrinsic(scale)
         ## initialize
         self.output_dim = 3
         self.build()
@@ -378,6 +393,9 @@ class Optical_transformer():
             self.intrinsic = Zed_intrinsic(scale)
         elif intrinsic == 'zed_mini':
             self.intrinsic = Zed_mini_intrinsic(scale)
+        elif intrinsic == 'unity':
+            self.intrinsic = Unity_intrinsic(scale)
+
         ## initialize
         self.cx_ = self.intrinsic.cx
         self.cy_ = self.intrinsic.cy

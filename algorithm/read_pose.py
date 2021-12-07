@@ -28,7 +28,8 @@ def read(config):
     # draw trajectory w.r.t. camera
     for demo_name, se3_traj in se3_dict.items():
         depth_dir = './data/'+task_name+'/'+demo_name+'/depth'
-        mask_dir = './output/'+task_name+'/segment/'+demo_name
+        #mask_dir = './output/'+task_name+'/segment/'+demo_name
+        mask_dir = './data/'+task_name+'/'+demo_name+'/mask'
         depth_files = sorted(glob.glob(depth_dir+'/*.npy'))
         mask_files = sorted(glob.glob(mask_dir+'/*.npy'))
         output_path = output_dir+'/'+demo_name
